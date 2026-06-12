@@ -764,6 +764,19 @@ svg{display:block}
 .am-ko{text-align:center;margin-top:6px;font-size:18px;font-weight:700;color:#16C09A;min-height:24px}
 .am-dup{text-align:center;margin-top:6px;font-size:13.5px;font-weight:700;color:#E8A000;opacity:0;transition:opacity .2s;min-height:18px}
 .am-dup.on{opacity:1}
+/* ===== SOLUTION: 완료 화면 강화 ===== */
+.dn-exact{color:#16C09A}
+.dn-card{margin:26px 24px 0;background:#F7F8FA;border-radius:18px;padding:18px 20px;display:flex;flex-direction:column;gap:12px}
+.dn-card .row{display:flex;justify-content:space-between;font-size:15px}
+.dn-card .row span{color:#8C9298}
+.dn-card .row b{font-weight:800}
+.dn-card .row b.ok{color:#16C09A}
+.dn-btns2{margin-top:auto;display:flex;flex-direction:column;align-items:flex-end;gap:12px;padding:0 16px 26px}
+.dn-btns2 .receipt{border:1.5px solid #ECEDEF;background:#fff;border-radius:16px;min-height:50px;padding:0 22px;
+  font-size:15px;font-weight:700;color:#46494E;cursor:pointer;font-family:inherit}
+.dn-btns2 .ok{border:none;background:#FEE500;color:#3A2929;border-radius:18px;min-height:58px;min-width:160px;
+  padding:0 30px;font-size:17px;font-weight:800;cursor:pointer;font-family:inherit}
+.dn-check{animation:okpop .5s cubic-bezier(.2,1.4,.4,1)}
 </style>
 </head>
 <body>
@@ -1234,14 +1247,16 @@ function scrDone2(){return `<section class="screen" id="s-done2">
   ${sb('6:56')}
   <div class="body">
     <div class="dn-check">${I.check}</div>
-    <div class="dn-msg"><span id="dn-who">김진우</span>님에게<br><em id="dn-amt">2,500원</em> 보냈어요</div>
+    <div class="dn-msg">김진우님,<br><span id="dn-who">김진우</span>님께 <em id="dn-amt">2,500원</em>을<br><b class="dn-exact">정확히</b> 보냈어요</div>
     <div class="dn-acc">카카오뱅크 3333-31-7235789 ${I.chevRight}</div>
-    <div class="dn-memo">${I.chat} 메모입력..</div>
-    <div class="dn-ad"><span class="adtag">AD</span>
-      <div class="l"><div class="s1">GS Pay로 아이스라떼 천원할인</div><div class="s2">카페25 올데이 프로모션</div></div>
-      <div class="cups"><span class="cup"></span><span class="cup"></span><span class="cup"></span><span class="cup"></span></div>
+    <div class="dn-card">
+      <div class="row"><span>보낸 시각</span><b id="dn-time">—</b></div>
+      <div class="row"><span>거래 상태</span><b class="ok">완료 ✓</b></div>
     </div>
-    <div class="dn-btns"><button class="share">${I.share2}</button><button class="ok" id="dn-ok">확인</button></div>
+    <div class="dn-btns2">
+      <button class="receipt" id="dn-receipt">영수증 보기</button>
+      <button class="ok" id="dn-ok">홈으로</button>
+    </div>
   </div>
   <div class="homebar"></div></section>`;}
 
@@ -1693,9 +1708,12 @@ function finishTransfer(){
   $('#dn-amt').textContent=v.toLocaleString('ko-KR')+'원';
   const ha=document.querySelector(`#s-home .acc2[data-acct="${curAcct}"] .amt`);
   if(ha){ha.dataset.full=a.bal.toLocaleString('ko-KR')+'원';if(!ha.classList.contains('masked'))ha.textContent=ha.dataset.full;}
-  go('done2');navigator.vibrate&&navigator.vibrate([20,60,20]);
+  const t=new Date(),p=x=>String(x).padStart(2,'0');
+  $('#dn-time').textContent=`오늘 ${p(t.getHours())}:${p(t.getMinutes())}:${p(t.getSeconds())}`;
+  go('done2');haptic(40);
 }
 $('#dn-ok').addEventListener('click',()=>{amt='';renderAmt();go('home');});
+$('#dn-receipt').addEventListener('click',()=>toast('영수증이 저장됐어요 (데모)'));
 
 
 /* ============ 카카오뱅크 AI (목데이터) ============ */
