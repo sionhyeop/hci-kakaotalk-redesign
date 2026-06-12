@@ -1,0 +1,1523 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>카카오뱅크 화면 클론 (고해상도)</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.min.css">
+<style>
+:root{
+  --kb-yellow:#FEE500;
+  --event:#FFE24A; --saving:#586071; --living:#B7E0DB; --ibk:#E6EBEF;
+  --teal:#A8D9D3;
+  --ink:#2B2E33; --ink2:#46494E; --sub:#8C9298; --sub2:#B6BBC2; --line:#F1F1F2;
+  --bg:#F2F4F6; --red:#F8454C; --blue:#4C7DF0; --green:#16C09A;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;
+  font-family:'Pretendard','Apple SD Gothic Neo',sans-serif}
+body{background:#0E1116;display:flex;align-items:center;justify-content:center;gap:36px;
+  min-height:100vh;padding:26px;color:var(--ink)}
+.stage{position:fixed;top:20px;left:26px;color:#596069;font-size:13px;line-height:1.7}
+.stage b{display:block;color:#C9CED6;font-size:15px}
+svg{display:block}
+.ic{width:24px;height:24px;display:inline-block;vertical-align:middle}
+
+/* ===== 폰 프레임 ===== */
+.frame{width:390px;height:802px;background:#fff;border-radius:46px;overflow:hidden;
+  position:relative;box-shadow:0 32px 90px rgba(0,0,0,.6);border:10px solid #000}
+
+/* iOS 상태바 */
+.sb{height:38px;display:flex;align-items:center;justify-content:space-between;
+  padding:10px 24px 0;position:relative;z-index:30;pointer-events:none;color:#111}
+.sb .t{font-size:14px;font-weight:700;letter-spacing:.2px}
+.sb .r{display:flex;align-items:center;gap:6px}
+.sb svg{display:block}
+.homebar{position:absolute;bottom:9px;left:50%;transform:translateX(-50%);
+  width:138px;height:5px;border-radius:3px;background:#0A0A0A;z-index:45}
+
+/* ===== 화면 공통 ===== */
+.screen{position:absolute;inset:0;display:none;flex-direction:column;background:#fff;z-index:10}
+.screen.on{display:flex;animation:fade .22s ease}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.body{flex:1;overflow-y:auto;scrollbar-width:none}
+.body::-webkit-scrollbar{display:none}
+.iconbtn{border:none;background:none;cursor:pointer;color:inherit;padding:8px;display:flex;align-items:center;justify-content:center}
+.iconbtn .ic{width:25px;height:25px}
+
+/* 하단 탭바 */
+.tabbar{height:62px;display:flex;align-items:center;border-top:1px solid #F4F4F4;background:#fff;z-index:20}
+.tabbar button{flex:1;border:none;background:none;cursor:pointer;color:#C5C9CF;
+  display:flex;align-items:center;justify-content:center;position:relative}
+.tabbar button .ic{width:26px;height:26px}
+.tabbar button.active{color:#2B2E33}
+.tabbar .reddot{position:absolute;top:13px;left:calc(50% + 6px);width:6px;height:6px;border-radius:50%;background:var(--red)}
+
+.toast{position:absolute;left:50%;bottom:96px;transform:translateX(-50%) translateY(16px);
+  background:rgba(20,20,22,.92);color:#fff;padding:12px 20px;border-radius:24px;font-size:14px;
+  font-weight:600;opacity:0;pointer-events:none;transition:.25s;z-index:60;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%)}
+
+/* 아바타(계좌 성격 글리프) */
+.ava{border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden}
+.ava svg{width:58%;height:58%}
+
+/* ===== 패턴 잠금 (Image 6) ===== */
+#s-pattern{background:var(--kb-yellow)}
+#s-pattern .body{display:flex;flex-direction:column;align-items:center;overflow:hidden;touch-action:none;overscroll-behavior:none}
+.deer{margin-top:40px}
+.pt-title{margin-top:30px;font-size:21px;font-weight:700;color:#1A1A1A}
+.pt-sub{margin-top:11px;font-size:15px;color:#F0612C;font-weight:600}
+.pattern{margin-top:46px;position:relative;touch-action:none}
+.pattern svg.lines{position:absolute;inset:0;pointer-events:none}
+.pgrid{display:grid;grid-template-columns:repeat(3,76px);grid-gap:38px}
+.pdot{width:76px;height:76px;display:flex;align-items:center;justify-content:center}
+.pdot i{width:17px;height:17px;border-radius:50%;background:#1B1B1B;transition:.15s}
+.pdot.act i{transform:scale(1.55);background:#000}
+.pt-forgot{margin-top:auto;margin-bottom:32px;font-size:14px;color:#6A6440;text-decoration:underline}
+
+/* ===== 홈 (Image 7) ===== */
+#s-home{background:var(--bg)}
+.home-top{display:flex;align-items:center;gap:8px;padding:4px 22px 16px}
+.home-top h1{font-size:25px;font-weight:800;letter-spacing:-.3px}
+.home-top .myacc{font-size:14px;color:var(--sub);font-weight:600}
+.home-top .prof{margin-left:auto;width:38px;height:38px;border-radius:50%;
+  background:linear-gradient(135deg,#8FB7C9,#5E7E8F);display:flex;align-items:center;justify-content:center}
+.home-top .prof svg{width:22px;height:22px;color:#fff}
+.banner{margin:0 16px 20px;background:#fff;border-radius:18px;padding:16px 18px;
+  display:flex;align-items:center;gap:12px;box-shadow:0 2px 12px rgba(0,0,0,.045)}
+.banner .bt{flex:1;font-size:12.5px;line-height:1.55;color:#9298A0}
+.banner .bt b{display:block;color:var(--ink);font-size:14px;font-weight:700;margin-top:3px}
+.banner .bi{width:42px;height:42px;flex-shrink:0}
+.acct{margin:0 16px 13px;border-radius:22px;padding:18px 20px 16px;position:relative;
+  box-shadow:0 4px 16px rgba(0,0,0,.055);cursor:pointer;transition:transform .12s}
+.acct:active{transform:scale(.985)}
+.acct .more{position:absolute;top:18px;right:18px;display:flex;gap:3px}
+.acct .more b{width:4px;height:4px;border-radius:50%;background:currentColor;opacity:.4}
+.acct .nm{display:flex;align-items:center;gap:9px;font-size:15px;font-weight:700}
+.acct .nm .ava{width:30px;height:30px}
+.acct .nm .star{color:#F5A623;font-size:14px;margin-left:-2px}
+.acct .amt{font-size:27px;font-weight:700;margin-top:13px;letter-spacing:-.4px}
+.acct .btns{display:flex;gap:8px;margin-top:14px}
+.acct .btns span{background:rgba(0,0,0,.055);padding:8px 17px;border-radius:13px;font-size:13.5px;font-weight:700}
+.acct.c-event{background:var(--event);color:#2B2614}
+.acct.c-saving{background:var(--saving);color:#fff}
+.acct.c-saving .btns span{background:rgba(255,255,255,.16)}
+.acct.c-living{background:var(--living);color:#1C3B38}
+.acct.c-ibk{background:var(--ibk);color:#2B2E33}
+
+/* ===== 상품/예적금 (Image 8) ===== */
+.ptabs{display:flex;gap:20px;padding:10px 22px 12px;overflow-x:auto;font-size:16px;font-weight:600;color:#B7BCC2;border-bottom:1px solid #F4F4F4}
+.ptabs::-webkit-scrollbar{display:none}
+.ptabs span{white-space:nowrap;padding-bottom:2px}
+.ptabs span.on{color:var(--ink);font-weight:800}
+.prod{display:flex;align-items:center;padding:19px 22px;border-bottom:1px solid #F5F5F5}
+.prod .pl{flex:1}
+.prod .pl .nm{font-size:16.5px;font-weight:700;display:flex;align-items:center;gap:7px}
+.prod .pl .nm .best{font-size:10px;font-weight:800;background:#FFF0D2;color:#E89400;padding:2px 7px;border-radius:6px}
+.prod .pl .d{font-size:13.5px;color:var(--sub);margin-top:6px}
+.prod .pr{text-align:right;flex-shrink:0;margin-left:14px}
+.prod .pr .rate{font-size:16.5px;font-weight:800;color:var(--green)}
+.prod .pr .per{font-size:12px;color:var(--sub2);margin-top:4px}
+
+/* ===== 계좌 상세 (Image 9/10) ===== */
+#s-detail{background:#fff;--db:var(--teal);--df:#173F3B}
+#det-sb{background:var(--db)}
+.det-top{display:flex;align-items:center;padding:2px 12px;background:var(--db);color:var(--df)}
+.det-top h1{flex:1;text-align:center;font-size:17px;font-weight:700}
+.det-top .ri{display:flex}
+.det-head{background:var(--db);color:var(--df);padding:4px 24px 28px}
+.det-head .accno{font-size:13px;opacity:.62;display:flex;align-items:center;gap:5px;font-weight:600}
+.det-head .accno svg{width:14px;height:14px;flex-shrink:0}
+.det-head .total{font-size:31px;font-weight:800;margin-top:11px;letter-spacing:-.5px}
+.det-head .ppl{display:flex;margin-top:16px}
+.det-head .ppl .ava{width:36px;height:36px;border:2.5px solid var(--db);margin-right:-10px}
+.det-head .rule{display:inline-flex;align-items:center;gap:3px;margin-top:16px;background:#fff;color:#2B2E33;
+  border-radius:19px;padding:9px 16px;font-size:13px;font-weight:700;box-shadow:0 2px 8px rgba(0,0,0,.08);white-space:nowrap}
+.det-head .rule svg{width:15px;height:15px;flex-shrink:0}
+.det-filter{display:flex;align-items:center;padding:16px 22px 10px;background:#fff}
+.det-filter .srch{color:#9DA2A8}
+.det-filter .opt{margin-left:auto;font-size:13px;color:var(--sub);font-weight:600;display:flex;align-items:center;gap:3px;white-space:nowrap;flex-shrink:0}
+.det-filter .opt svg{width:15px;height:15px;flex-shrink:0}
+.txrow{display:flex;align-items:flex-start;padding:15px 22px;gap:14px}
+.txrow .dt{width:38px;font-size:13px;color:var(--sub);padding-top:2px;font-weight:500}
+.txrow .mid{flex:1}
+.txrow .mid b{font-size:15.5px;font-weight:600}
+.txrow .mid span{display:block;font-size:13px;color:var(--sub);margin-top:4px}
+.txrow .rt{text-align:right}
+.txrow .rt .v{font-size:15.5px;font-weight:700}
+.txrow .rt .v.plus{color:var(--blue)}
+.txrow .rt .bal{font-size:12.5px;color:var(--sub2);margin-top:4px;font-weight:500}
+.det-float{position:absolute;right:18px;bottom:82px;background:#CCE6F1;color:#3A82AC;
+  border:none;border-radius:24px;padding:11px 17px 11px 13px;font-size:14px;font-weight:700;cursor:pointer;
+  box-shadow:0 8px 20px rgba(58,130,172,.25);display:flex;align-items:center;gap:6px;z-index:15}
+.det-float .wc{width:20px;height:20px;border-radius:50%;background:#3A82AC;color:#CCE6F1;
+  display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800}
+
+/* ===== 내 계좌 모아보기 (Image 3) ===== */
+#s-myacc{background:var(--bg)}
+.ma-top{display:flex;align-items:center;padding:2px 14px}
+.ma-title{font-size:23px;font-weight:800;padding:8px 22px 16px;letter-spacing:-.3px}
+.ma-pills{display:flex;gap:8px;padding:0 22px 18px}
+.ma-pills span{padding:9px 17px;border-radius:20px;font-size:14px;font-weight:700;background:#E8EBEE;color:#80868E}
+.ma-pills span.on{background:var(--ink);color:#fff}
+.ma-total{margin:0 16px 16px;background:#E8EBEE;border-radius:14px;padding:15px 18px;
+  display:flex;justify-content:space-between;font-size:15px;font-weight:700}
+.ma-card{margin:0 16px 12px;background:#fff;border-radius:18px;padding:18px 20px;
+  display:flex;align-items:center;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.04);transition:transform .12s}
+.ma-card:active{transform:scale(.985)}
+.ma-card .ava{width:42px;height:42px;margin-right:14px}
+.ma-card .l b{font-size:16px;font-weight:700}
+.ma-card .l span{display:block;font-size:12.5px;color:var(--sub);margin-top:4px}
+.ma-card .r{margin-left:auto;font-size:16px;font-weight:800;display:flex;align-items:center;gap:7px}
+.ma-card .r .ar{color:#CDD1D6}
+.ma-sub{font-size:13.5px;font-weight:700;color:var(--sub);padding:12px 22px 12px}
+.ma-link{display:flex;align-items:center;justify-content:center;gap:4px;font-size:14px;color:var(--sub);margin:24px auto;cursor:pointer}
+.ma-link u{text-decoration:underline}
+
+/* ===== 이체 받는사람 (Image 5) ===== */
+.rc-top{display:flex;align-items:center;padding:8px 20px 8px}
+.rc-top h1{font-size:22px;font-weight:800;flex:1;letter-spacing:-.3px}
+.rc-top .close{font-size:15px;color:var(--sub);font-weight:600;cursor:pointer}
+.rc-search{margin:8px 20px 16px;background:#F2F4F6;border-radius:13px;padding:14px 16px;
+  display:flex;align-items:center;gap:10px;color:#A6ABB1;font-size:15px}
+.rc-search svg{color:#A6ABB1}
+.rc-tabs{display:flex;gap:8px;padding:0 20px 14px;border-bottom:1px solid #F2F2F2}
+.rc-tabs span{font-size:15px;font-weight:700;color:#AEB3B9;padding:7px 15px;border-radius:18px;cursor:pointer}
+.rc-tabs span.on{background:#EEF0F2;color:var(--ink)}
+.rc-sec{display:flex;align-items:center;padding:20px 22px 8px;font-size:15px;font-weight:700}
+.rc-sec .cnt{margin-left:auto;font-size:13px;color:var(--sub);font-weight:600;display:flex;align-items:center;gap:3px}
+.rc-row{display:flex;align-items:center;gap:14px;padding:13px 22px;cursor:pointer}
+.rc-row:active{background:#FAFAFA}
+.rc-row .ava{width:46px;height:46px}
+.rc-row .info b{font-size:16px;font-weight:600;display:block}
+.rc-row .info span{font-size:13px;color:var(--sub)}
+.rc-row .star{margin-left:auto;color:#D5D8DC;cursor:pointer}
+.rc-bottom{border-top:1px solid #F2F2F2;padding:18px 22px;font-size:15px;font-weight:700;
+  text-align:center;background:#fff;display:flex;align-items:center;justify-content:center;gap:6px}
+
+/* ===== 송금 금액 (Image 1/2) ===== */
+.am-top{display:flex;align-items:center;padding:4px 16px}
+.am-top h1{flex:1;text-align:center;font-size:17px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:4px}
+.am-top h1 svg{width:14px;height:14px;color:#9DA2A8}
+.am-top .cancel{font-size:15px;color:var(--sub);font-weight:600;cursor:pointer}
+.am-sub{text-align:center;font-size:13px;color:var(--sub);margin-top:0}
+.am-amount{text-align:center;margin:52px 0 0;font-size:44px;font-weight:800;color:#1E2124;min-height:54px;letter-spacing:-.5px;transition:color .15s}
+.am-amount.lack{color:var(--red)}
+.am-amount.empty{color:#D6D9DE;font-weight:600;font-size:30px}
+.am-hint{text-align:center;font-size:13.5px;color:var(--sub);margin-top:14px;min-height:18px}
+.am-hint.lack{color:var(--red);font-weight:600}
+.am-hint.lack u{color:var(--red)}
+.am-hint u{cursor:pointer}
+.am-ext{margin:44px 22px 0;background:#F2F4F6;border:none;border-radius:12px;padding:17px 18px;
+  display:flex;align-items:center;justify-content:space-between;font-size:14px;color:#6B7077}
+.am-ext svg{width:18px;height:18px;color:#9DA2A8;flex-shrink:0}
+.am-keypad{margin-top:auto;display:grid;grid-template-columns:repeat(3,1fr);padding:8px 12px 0}
+.am-key{height:60px;border:none;background:none;font-size:25px;font-weight:600;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;color:var(--ink);transition:background .1s;margin:2px;border-radius:14px}
+.am-key svg{width:24px;height:24px}
+.am-key:active{background:#F3F3F3}
+.am-next{margin:12px 16px 16px;height:54px;border:none;border-radius:14px;background:#F1F2F4;
+  color:#B7BBC1;font-size:16.5px;font-weight:700;cursor:pointer;transition:.2s}
+.am-next.on{background:var(--kb-yellow);color:#2B2614}
+
+/* ===== 오픈뱅킹 동의 (Image 4) ===== */
+.ob-top{display:flex;align-items:center;padding:4px 16px}
+.ob-top h1{flex:1;text-align:center;font-size:16px;font-weight:700}
+.ob-top .cancel{font-size:15px;color:var(--sub);cursor:pointer}
+.ob-head{padding:20px 24px 24px;font-size:20px;font-weight:700;line-height:1.45;letter-spacing:-.3px}
+.ob-card{margin:0 18px;background:#fff;border:1px solid #F0F0F0;border-radius:18px;
+  box-shadow:0 5px 20px rgba(0,0,0,.05);overflow:hidden}
+.ob-all{display:flex;align-items:center;gap:12px;padding:18px 20px;font-size:16px;font-weight:700;cursor:pointer}
+.ob-all .ck{width:26px;height:26px;border-radius:50%;background:var(--kb-yellow);display:flex;align-items:center;justify-content:center;color:#2B2614}
+.ob-all .ck svg{width:15px;height:15px}
+.ob-all .ar{margin-left:auto;color:#C7CBD0}
+.ob-item{display:flex;align-items:center;gap:13px;padding:13px 20px;font-size:14px;color:#5E646E;border-top:1px solid #F4F4F4}
+.ob-item .ck{color:#2B2E33;display:flex}
+.ob-item .ck svg{width:17px;height:17px}
+.ob-item .ar{margin-left:auto;color:#D7DADE}
+.ob-agree{margin:auto 16px 22px;height:56px;border:none;border-radius:14px;background:var(--kb-yellow);
+  color:#2B2614;font-size:17px;font-weight:800;cursor:pointer}
+
+/* ===== 한 줄 + 말줄임 처리(박스 초과 방지) ===== */
+.acct .nm{min-width:0}
+.acct .nm .nmtxt{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.acct .nm .ava,.acct .nm .star{flex-shrink:0}
+.det-top h1{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px;min-width:0}
+.det-head .accno{min-width:0;white-space:nowrap;overflow:hidden}
+.rc-row .info{flex:1;min-width:0}
+.rc-row .info b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rc-row .ava,.rc-row .star{flex-shrink:0}
+.ma-card .l{flex:1;min-width:0}
+.ma-card .l b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.ma-card .ava{flex-shrink:0}
+.ma-card .r{flex-shrink:0;white-space:nowrap}
+.ob-item{min-width:0}
+.ob-item .t{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ob-item .ck,.ob-item .ar{flex-shrink:0}
+.am-top h1{min-width:0}
+.am-top h1 .nmtxt{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.am-top h1 svg{flex-shrink:0}
+.prod .pl{min-width:0}
+.prod .pl .nm{min-width:0}
+.prod .pl .nm .best{flex-shrink:0}
+.prod .pl .d{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.banner .bt b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+@media (max-width:760px){
+  body{padding:0;gap:0;background:#fff}
+  .stage{display:none}
+  .frame{width:100vw;height:100dvh;border-radius:0;border:none;box-shadow:none}
+}
+
+/* ===== 신형 홈 (실사용 스크린샷 반영) ===== */
+.h2-top{display:flex;align-items:center;padding:10px 22px 6px}
+.h2-top h1{font-size:24px;font-weight:800;letter-spacing:-.3px}
+.h2-top .bell{margin-left:auto;position:relative;color:#2B2E33}
+.h2-top .bell .ic{width:26px;height:26px}
+.h2-top .bell::after{content:'';position:absolute;top:1px;right:1px;width:7px;height:7px;border-radius:50%;background:var(--red);border:1.5px solid var(--bg)}
+.h2-bubble{margin:6px auto 14px;display:flex;align-items:center;gap:7px;background:#fff;border-radius:26px;
+  padding:13px 20px;font-size:14.5px;font-weight:700;box-shadow:0 3px 14px rgba(0,0,0,.06);width:fit-content}
+.h2-bubble svg{width:18px;height:18px;flex-shrink:0}
+.h2-ad{margin:0 16px 16px;background:#fff;border-radius:18px;padding:16px 18px;position:relative;
+  display:flex;align-items:center;gap:10px;box-shadow:0 2px 10px rgba(0,0,0,.04)}
+.h2-ad .l{flex:1;min-width:0}
+.h2-ad .l .s1{font-size:13px;color:#6E747B}
+.h2-ad .l .s2{font-size:16.5px;font-weight:800;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.h2-ad .l .s3{font-size:9.5px;color:#B9BDC3;margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.h2-ad .scale{width:58px;height:58px;flex-shrink:0}
+.h2-ad .adtag{position:absolute;right:12px;bottom:10px;font-size:9px;font-weight:700;color:#B9BDC3;
+  border:1px solid #DFE2E6;border-radius:5px;padding:1px 5px}
+.h2-chips{display:flex;gap:8px;padding:0 16px 18px;overflow-x:auto}
+.h2-chips::-webkit-scrollbar{display:none}
+.h2-chips span{display:flex;align-items:center;gap:7px;background:#fff;border-radius:24px;padding:13px 17px;
+  font-size:14.5px;font-weight:700;white-space:nowrap;box-shadow:0 2px 10px rgba(0,0,0,.045)}
+.h2-chips svg{width:19px;height:19px;flex-shrink:0}
+/* 신형 계좌 카드: 이름 위 / 잔액 아래 */
+.acc2{margin:0 16px 14px;border-radius:24px;padding:22px 22px 20px;position:relative;color:#fff;
+  box-shadow:0 5px 18px rgba(0,0,0,.07);cursor:pointer;transition:transform .12s}
+.acc2:active{transform:scale(.985)}
+.acc2 .more{position:absolute;top:20px;right:20px;display:flex;gap:3.5px}
+.acc2 .more b{width:4px;height:4px;border-radius:50%;background:#fff;opacity:.55}
+.acc2 .row1{display:flex;align-items:flex-start;gap:13px;min-width:0}
+.acc2 .ava{width:46px;height:46px;background:rgba(255,255,255,.85)}
+.acc2 .ava svg{width:55%;height:55%}
+.acc2 .nm{font-size:15px;font-weight:700;display:flex;align-items:center;gap:5px;min-width:0;padding-top:2px}
+.acc2 .nm .nmtxt{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.acc2 .nm .star{font-size:13px;flex-shrink:0;opacity:.95}
+.acc2 .amt{font-size:21px;font-weight:600;margin-top:5px;letter-spacing:-.3px}
+.acc2 .btns{display:flex;justify-content:flex-end;gap:9px;margin-top:14px}
+.acc2 .btns span{background:rgba(255,255,255,.22);padding:11px 21px;border-radius:22px;font-size:14px;font-weight:700}
+.acc2 .divider{height:1px;background:rgba(255,255,255,.25);margin:18px -2px 4px}
+.acc2 .sub{display:flex;align-items:center;padding:13px 2px 2px;font-size:15px;font-weight:600}
+.acc2 .sub .r{margin-left:auto;font-weight:700;font-size:16px}
+.acc2 .sub .bear{margin-left:auto;width:30px;height:30px}
+.acc2.t-slate{background:#6D898C}
+.acc2.t-green{background:#3BB45F}
+.acc2.t-purple{background:#7C6FDB}
+/* 라벨형 5탭 하단바 */
+.tab2{height:74px;display:flex;align-items:stretch;border-top:1px solid #F0F0F0;background:#fff;z-index:20;padding-bottom:6px}
+.tab2 button{flex:1;border:none;background:none;cursor:pointer;color:#9AA0A7;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;position:relative;font-family:inherit}
+.tab2 button .ic{width:25px;height:25px}
+.tab2 button .lb{font-size:10.5px;font-weight:700;letter-spacing:-.2px}
+.tab2 button.active{color:#1E2124}
+.tab2 .reddot{position:absolute;top:11px;left:calc(50% + 9px);width:6px;height:6px;border-radius:50%;background:var(--red)}
+
+/* ===== 카카오뱅크 AI ===== */
+#s-ai{background:#fff}
+.ai-top{display:flex;align-items:center;padding:6px 16px}
+.ai-top h1{flex:1;text-align:center;font-size:17px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:6px}
+.ai-top h1 .beta{font-size:11px;font-weight:700;color:#6E747B;background:#EEF0F2;border-radius:6px;padding:2.5px 7px}
+.ai-body{flex:1;overflow-y:auto;display:flex;flex-direction:column;scrollbar-width:none}
+.ai-body::-webkit-scrollbar{display:none}
+.ai-hero{display:flex;flex-direction:column;align-items:center;margin-top:96px}
+.ai-hero .spark{width:74px;height:74px}
+.ai-hero .t{margin-top:30px;font-size:23px;font-weight:800;text-align:center;line-height:1.4;letter-spacing:-.3px}
+.ai-chips{margin-top:auto;display:flex;flex-direction:column;align-items:center;gap:11px;padding:40px 18px 14px}
+.ai-chip{display:flex;align-items:center;gap:8px;background:#F2F3F5;border-radius:26px;padding:14px 20px;
+  font-size:15.5px;font-weight:600;color:#2B2E33;cursor:pointer;max-width:100%;transition:transform .12s;border:none;font-family:inherit}
+.ai-chip:active{transform:scale(.97)}
+.ai-chip svg{width:20px;height:20px;flex-shrink:0}
+.ai-chip .txt{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ai-chip .av{width:22px;height:22px;border-radius:50%;background:#2E9A4E;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ai-chip .av svg{width:13px;height:13px}
+.ai-inputbar{display:flex;align-items:center;gap:10px;margin:8px 14px 14px;background:#fff;border:1px solid #ECEDEF;
+  border-radius:28px;padding:8px 8px 8px 20px;box-shadow:0 4px 18px rgba(0,0,0,.06)}
+.ai-inputbar input{flex:1;border:none;outline:none;font-size:15.5px;font-family:inherit;color:#2B2E33;background:none;min-width:0}
+.ai-inputbar input::placeholder{color:#A8ADB3}
+.ai-inputbar .send{width:44px;height:44px;border-radius:50%;border:none;background:#F2F3F5;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;color:#2B2E33;flex-shrink:0}
+.ai-inputbar .send svg{width:20px;height:20px}
+/* 채팅 모드 */
+.ai-msgs{display:none;flex-direction:column;gap:12px;padding:18px 18px 10px}
+.ai-msgs.on{display:flex}
+#s-ai.chatting .ai-hero,#s-ai.chatting .ai-chips{display:none}
+#s-ai.chatting .ai-msgs{display:flex}
+.msg{max-width:78%;padding:13px 17px;border-radius:20px;font-size:15px;line-height:1.55;white-space:pre-line}
+.msg.me{align-self:flex-end;background:#FEE500;color:#2B2614;border-bottom-right-radius:6px;font-weight:600}
+.msg.ai{align-self:flex-start;background:#F2F3F5;color:#2B2E33;border-bottom-left-radius:6px}
+.msg.ai .sp{width:18px;height:18px;display:inline-block;vertical-align:-3px;margin-right:4px}
+
+/* ===== 투자 탭 ===== */
+#s-invest{background:#fff}
+.iv-top{display:flex;align-items:baseline;gap:14px;padding:12px 22px 14px}
+.iv-top .t1{font-size:24px;font-weight:800;color:#B9BDC3}
+.iv-top .t2{font-size:24px;font-weight:800;color:#1E2124}
+.iv-ticker{display:flex;align-items:center;padding:4px 0 16px;overflow-x:auto}
+.iv-ticker::-webkit-scrollbar{display:none}
+.iv-tk{flex-shrink:0;padding:0 18px;border-left:1px solid #EFEFEF;display:flex;align-items:center;gap:10px}
+.iv-tk:first-child{border-left:none}
+.iv-tk .nm{font-size:13px;color:#6E747B}
+.iv-tk .v{font-size:16.5px;font-weight:800;margin-top:2px}
+.iv-tk .v em{font-style:normal;font-size:13px;font-weight:700;margin-left:5px}
+.iv-tk .up{color:#F0454C}.iv-tk .dn{color:#4C7DF0}
+.iv-tk svg{width:44px;height:26px;flex-shrink:0}
+.iv-banner{background:#EFF3FB;padding:26px 24px;display:flex;align-items:center;gap:10px}
+.iv-banner .l{flex:1}
+.iv-banner .s1{font-size:14px;font-weight:800;color:#3E6FE0}
+.iv-banner .s2{font-size:21px;font-weight:800;line-height:1.42;margin-top:8px;letter-spacing:-.3px}
+.iv-banner .farm{width:120px;height:104px;flex-shrink:0}
+.iv-sec{font-size:21px;font-weight:800;padding:30px 22px 8px;letter-spacing:-.3px}
+.iv-item{display:flex;align-items:center;gap:16px;padding:15px 22px}
+.iv-item .lg{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  color:#fff;font-weight:800;font-size:13px;flex-shrink:0}
+.iv-item .mid{flex:1;min-width:0}
+.iv-item .mid b{font-size:17.5px;font-weight:700;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.iv-item .mid span{font-size:13.5px;color:#9AA0A7;margin-top:4px;display:block}
+.iv-item .rt{text-align:right;flex-shrink:0}
+.iv-item .rt .rate{font-size:18px;font-weight:800;color:#F0454C}
+.iv-item .rt .per{font-size:13px;color:#9AA0A7;margin-top:4px}
+.iv-promos{display:flex;gap:12px;padding:18px 16px 24px;overflow-x:auto}
+.iv-promos::-webkit-scrollbar{display:none}
+.iv-promo{flex-shrink:0;width:236px;border-radius:22px;padding:24px 22px 22px;display:flex;flex-direction:column}
+.iv-promo .app{width:54px;height:54px;border-radius:14px;display:flex;align-items:center;justify-content:center;
+  color:#fff;font-weight:800;font-size:15px;position:relative}
+.iv-promo .app .rd{position:absolute;right:-3px;bottom:-3px;width:9px;height:9px;border-radius:50%;background:#F0454C}
+.iv-promo .s1{font-size:13.5px;color:#6E747B;margin-top:42px}
+.iv-promo .s2{font-size:17px;font-weight:800;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.iv-promo.p1{background:#E3E7FA}
+.iv-promo.p2{background:#DCE9F7}
+
+/* ===== 전체 탭 ===== */
+#s-allmenu{background:#fff}
+.al-top{display:flex;align-items:center;gap:4px;padding:10px 22px 4px}
+.al-top h1{font-size:24px;font-weight:800;display:flex;align-items:center;gap:4px}
+.al-top h1 svg{width:16px;height:16px;color:#B9BDC3}
+.al-top .sp{flex:1}
+.al-top .iconbtn .ic{width:24px;height:24px}
+.al-top .aichat{background:#1E2124;color:#fff;font-size:13.5px;font-weight:700;border:none;border-radius:22px;
+  padding:10px 16px;cursor:pointer;font-family:inherit;margin-left:4px}
+.al-quick{display:flex;justify-content:space-between;padding:20px 26px 8px}
+.al-q{display:flex;flex-direction:column;align-items:center;gap:9px;font-size:12.5px;font-weight:600;color:#3A3E43;
+  cursor:pointer;position:relative;background:none;border:none;font-family:inherit}
+.al-q .ic{width:30px;height:30px;stroke-width:1.6}
+.al-q .rd{position:absolute;top:-2px;right:2px;width:6px;height:6px;border-radius:50%;background:#F0454C}
+.al-pop{margin:22px 16px;background:#fff;border:1px solid #F0F0F0;border-radius:22px;
+  box-shadow:0 6px 24px rgba(0,0,0,.05);padding:22px 22px 10px}
+.al-pop .hd{font-size:14px;font-weight:700;color:#9AA0A7;margin-bottom:14px}
+.al-pop-row{display:flex;align-items:center;gap:13px;padding:12px 0;font-size:16.5px;font-weight:700;cursor:pointer}
+.al-pop-row .em{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.al-pop-row .em svg{width:19px;height:19px}
+.al-pop-row .ev{font-size:11.5px;font-weight:800;color:#B98A00;background:#FBEEB8;border-radius:10px;padding:4px 9px;flex-shrink:0}
+.al-pop .dv{height:1px;background:#F2F2F2;margin:8px 0}
+.al-tabs{display:flex;gap:22px;padding:30px 22px 6px;font-size:21px;font-weight:800;color:#C2C6CC;overflow-x:auto}
+.al-tabs::-webkit-scrollbar{display:none}
+.al-tabs span{white-space:nowrap;position:relative;cursor:pointer}
+.al-tabs span.on{color:#1E2124}
+.al-tabs span .rd{position:absolute;top:1px;right:-7px;width:6px;height:6px;border-radius:50%;background:#F0454C}
+.al-cat{font-size:14px;font-weight:700;color:#9AA0A7;padding:24px 22px 4px}
+.al-svc{display:flex;align-items:center;gap:9px;padding:16px 22px;font-size:18.5px;font-weight:800;cursor:pointer;letter-spacing:-.3px}
+.al-svc .beta{font-size:11.5px;font-weight:700;color:#6E747B;background:#EEF0F2;border-radius:7px;padding:3px 8px}
+
+/* ===== 혜택 탭 ===== */
+#s-benefit{background:#fff}
+.bf-top{display:flex;align-items:center;padding:10px 22px 12px}
+.bf-top h1{font-size:24px;font-weight:800}
+.bf-top .r{margin-left:auto;display:flex;align-items:center;gap:12px;font-size:16px;font-weight:800}
+.bf-top .r .grp{display:flex;align-items:center;gap:5px}
+.bf-top .r svg{width:20px;height:20px}
+.bf-top .r .bar{width:1px;height:14px;background:#E3E5E8}
+.bf-notice{display:flex;align-items:center;gap:9px;padding:10px 22px 16px;font-size:15px;font-weight:600;color:#3A3E43;cursor:pointer}
+.bf-notice svg{width:19px;height:19px;flex-shrink:0;color:#8C92B8}
+.bf-notice .ar{margin-left:auto;color:#C2C6CC}
+.bf-banner{margin:0 16px 26px;background:#FDF6D8;border-radius:20px;padding:22px 22px;display:flex;align-items:center;gap:8px}
+.bf-banner .l{flex:1;min-width:0}
+.bf-banner .s1{font-size:13.5px;color:#8A7A3A;font-weight:600}
+.bf-banner .s2{font-size:18px;font-weight:800;margin-top:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bf-banner .wiz{width:84px;height:76px;flex-shrink:0}
+.bf-sec{font-size:22px;font-weight:800;padding:6px 22px 12px;letter-spacing:-.3px}
+.bf-item{display:flex;align-items:center;gap:18px;padding:14px 22px;cursor:pointer;position:relative}
+.bf-item:active{background:#FAFAFA}
+.bf-item .ico{width:54px;height:54px;border-radius:50%;background:#F2F3F5;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.bf-item .ico svg{width:30px;height:30px}
+.bf-item .ico.wht{background:#fff;border:1px solid #ECEDEF}
+.bf-item .mid{flex:1;min-width:0}
+.bf-item .mid .t{font-size:18px;font-weight:800;display:flex;align-items:center;gap:8px;letter-spacing:-.3px}
+.bf-item .mid .t .tt{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bf-item .mid .t .bdg{font-size:12px;font-weight:700;border-radius:12px;padding:4px 9px;flex-shrink:0}
+.bf-item .mid .t .bdg.new{background:#FDE7E8;color:#E5333C}
+.bf-item .mid .t .bdg.hot{background:#E3F1FB;color:#2E7BC2}
+.bf-item .mid .s{font-size:15px;color:#9AA0A7;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bf-item .info{position:absolute;right:14px;top:10px;width:18px;height:18px;border-radius:50%;background:#C9CDD2;color:#fff;
+  font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.bf-promos{display:flex;gap:12px;padding:16px 16px 24px;overflow-x:auto}
+.bf-promos::-webkit-scrollbar{display:none}
+.bf-promo{flex-shrink:0;width:268px;border-radius:22px;padding:22px;position:relative;color:#fff;min-height:120px}
+.bf-promo .s1{font-size:13.5px;opacity:.85}
+.bf-promo .s2{font-size:19px;font-weight:800;margin-top:6px;line-height:1.35}
+.bf-promo .adtag{position:absolute;right:14px;top:14px;font-size:9px;font-weight:700;color:rgba(255,255,255,.8);
+  border:1px solid rgba(255,255,255,.5);border-radius:5px;padding:1px 5px}
+.bf-promo.b1{background:linear-gradient(135deg,#7B8DEB,#5667D6)}
+.bf-promo.b2{background:linear-gradient(135deg,#4A5BC4,#3A4AAE)}
+
+/* ===== 홈 하단 스크롤 영역 ===== */
+.hb-aichip{margin:18px auto 14px;display:flex;align-items:center;gap:8px;background:#2B2E33;color:#fff;
+  border-radius:26px;padding:13px 20px;font-size:14.5px;font-weight:700;width:fit-content;cursor:pointer;
+  box-shadow:0 6px 18px rgba(0,0,0,.18)}
+.hb-aichip svg{width:18px;height:18px;flex-shrink:0}
+.hb-gather{margin:0 16px 14px;background:#fff;border-radius:22px;padding:22px;box-shadow:0 4px 16px rgba(0,0,0,.055)}
+.hb-gather .hd{font-size:17px;font-weight:800;margin-bottom:18px}
+.hb-grow{display:flex;align-items:center;gap:15px;padding:10px 0;cursor:pointer}
+.hb-grow .gic{width:40px;height:40px;flex-shrink:0}
+.hb-grow .s1{font-size:13.5px;color:#8C9298}
+.hb-grow .s2{font-size:17px;font-weight:800;margin-top:3px}
+.hb-add{margin:0 16px 22px;background:#fff;border:none;border-radius:22px;padding:21px;width:calc(100% - 32px);
+  font-size:16px;font-weight:700;color:#6E747B;cursor:pointer;font-family:inherit;
+  display:flex;align-items:center;justify-content:center;gap:7px;box-shadow:0 4px 16px rgba(0,0,0,.055)}
+.hb-add svg{width:17px;height:17px}
+.hb-foot{display:flex;align-items:center;justify-content:center;gap:26px;padding:8px 0 34px;font-size:15px;font-weight:600;color:#6E747B}
+.hb-foot .bar{width:1px;height:13px;background:#D9DCE0}
+.hb-shorts{display:flex;gap:12px;padding:0 16px 18px;overflow-x:auto}
+.hb-shorts::-webkit-scrollbar{display:none}
+.hb-short{flex-shrink:0;width:172px;background:#fff;border-radius:22px;padding:22px 20px 24px;
+  box-shadow:0 4px 16px rgba(0,0,0,.055);cursor:pointer;transition:transform .12s}
+.hb-short:active{transform:scale(.97)}
+.hb-short .sic{width:44px;height:44px}
+.hb-short .t{font-size:17px;font-weight:800;line-height:1.4;margin-top:30px;letter-spacing:-.3px}
+.hb-ad{margin:0 16px 20px;background:#fff;border-radius:18px;padding:16px 18px;position:relative;
+  display:flex;align-items:center;gap:12px;box-shadow:0 2px 10px rgba(0,0,0,.04)}
+.hb-ad .l{flex:1;min-width:0}
+.hb-ad .l .s1{font-size:12.5px;color:#6E747B;display:flex;align-items:center;gap:5px}
+.hb-ad .l .s1 .app{width:16px;height:16px;border-radius:4px;background:#1E2124;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+.hb-ad .l .s1 .app svg{width:10px;height:10px}
+.hb-ad .l .s2{font-size:17px;font-weight:800;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hb-ad .l .s3{font-size:10.5px;color:#B9BDC3;margin-top:6px;display:flex;align-items:center;gap:4px}
+.hb-ad .l .s3 .adb{font-size:8.5px;font-weight:800;color:#fff;background:#C9CDD2;border-radius:8px;padding:1.5px 6px}
+.hb-ad .gift-img{width:118px;height:64px;border-radius:10px;flex-shrink:0;background:linear-gradient(135deg,#B01820,#7A0F18);
+  display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.hb-ad .gift-img .gc{width:52px;height:33px;border-radius:5px;background:#E5333C;border:1.5px solid #FFB3B8;
+  display:flex;align-items:center;justify-content:center;color:#fff;font-size:7px;font-weight:800;letter-spacing:.3px;box-shadow:0 3px 8px rgba(0,0,0,.4)}
+.hb-ad .gift-img .spk{position:absolute;color:#FFD9A0;font-size:9px}
+
+/* ===== 송금 플로우 v2 ===== */
+.am2-acc{margin:0 16px 12px;background:#F2F3F5;border-radius:14px;padding:17px 18px;display:flex;align-items:center;
+  justify-content:space-between;font-size:15.5px;font-weight:700;cursor:pointer}
+.am2-acc svg{width:18px;height:18px;color:#9DA2A8;flex-shrink:0}
+.am2-acc .txt{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.am2-quick{display:flex;gap:9px;padding:0 16px 10px}
+.am2-quick button{flex:1;border:1px solid #E3E5E8;background:#fff;border-radius:12px;padding:12px 0;
+  font-size:14.5px;font-weight:700;cursor:pointer;font-family:inherit;color:#2B2E33}
+.am2-quick button:active{background:#F5F5F5}
+.am-amount .cur{display:inline-block;width:2px;height:.85em;background:#7A7F86;vertical-align:-2px;
+  margin:0 1px;animation:blink 1.1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.am-amount .wn{font-size:.82em}
+.am2-next{margin:12px 16px 16px;height:56px;border:none;border-radius:14px;background:#F1F2F4;
+  color:#B7BBC1;font-size:17px;font-weight:800;cursor:pointer;transition:.2s;font-family:inherit}
+.am2-next.on{background:var(--kb-yellow);color:#2B2614}
+/* 표기 화면 */
+.mm-fld{margin:0 16px 12px;border:1px solid #E3E5E8;border-radius:14px;padding:17px 18px;display:flex;align-items:center;
+  font-size:15.5px;font-weight:700}
+.mm-fld .q{width:18px;height:18px;border-radius:50%;border:1.4px solid #C5C9CF;color:#9DA2A8;font-size:11px;
+  display:inline-flex;align-items:center;justify-content:center;margin-left:6px;font-weight:700}
+.mm-fld input{margin-left:auto;border:none;outline:none;text-align:right;font-size:15.5px;font-family:inherit;
+  font-weight:600;color:#2B2E33;background:none;width:45%}
+.mm-fld input::placeholder{color:#B7BBC1;font-weight:500}
+.mm-foot{display:flex;align-items:center;padding:6px 22px;font-size:14.5px;font-weight:700}
+.mm-foot .more{margin-left:auto;color:#6E747B;text-decoration:underline;font-weight:600}
+/* 확인 바텀시트 */
+.sheet-dim{position:absolute;inset:0;background:rgba(0,0,0,.45);z-index:48;opacity:0;pointer-events:none;transition:.25s}
+.sheet-dim.on{opacity:1;pointer-events:auto}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:28px 28px 0 0;z-index:49;
+  padding:34px 22px 26px;transform:translateY(105%);transition:transform .3s cubic-bezier(.2,.8,.25,1);text-align:center}
+.sheet.on{transform:none}
+.sheet .bicon{width:64px;height:64px;border-radius:50%;background:var(--kb-yellow);margin:0 auto 26px;
+  display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:900;color:#2B2614}
+.sheet .q1{font-size:20px;font-weight:600;line-height:1.5}
+.sheet .q1 b{font-weight:800}
+.sheet .acc{font-size:14px;color:#8C9298;margin-top:16px}
+.sheet .btns{display:flex;gap:11px;margin-top:34px}
+.sheet .btns button{flex:1;height:56px;border:none;border-radius:14px;font-size:16.5px;font-weight:800;cursor:pointer;font-family:inherit}
+.sheet .btns .cancel{background:#E8EAED;color:#2B2E33;flex:0 0 36%}
+.sheet .btns .ok{background:var(--kb-yellow);color:#2B2614}
+/* 송금 인증 */
+#s-auth2{background:#fff}
+.au-title{text-align:center;font-size:21px;font-weight:800;margin-top:46px;letter-spacing:-.3px}
+.au-sub{text-align:center;font-size:14.5px;color:#8C9298;margin-top:10px}
+.au-fp{margin:64px auto 0;width:130px;height:130px;border-radius:50%;background:#FFFBE0;display:flex;
+  align-items:center;justify-content:center;cursor:pointer;position:relative}
+.au-fp svg{width:62px;height:62px;color:#E0B500}
+.au-fp .ring{position:absolute;inset:-6px;border-radius:50%;width:142px;height:142px}
+.au-fp .ring circle{fill:none;stroke:var(--kb-yellow);stroke-width:5;stroke-linecap:round;
+  stroke-dasharray:440;stroke-dashoffset:440;transform:rotate(-90deg);transform-origin:center}
+.au-fp.scanning .ring circle{animation:fpscan 1.1s ease forwards}
+@keyframes fpscan{to{stroke-dashoffset:0}}
+.au-ok{margin:64px auto 0;width:130px;height:130px;border-radius:50%;background:#E9FBF2;display:none;
+  align-items:center;justify-content:center}
+.au-ok svg{width:58px;height:58px;color:#16C09A}
+.au-switch{display:block;margin:54px auto 0;border:none;background:none;font-size:15px;font-weight:700;
+  color:#6E747B;text-decoration:underline;cursor:pointer;font-family:inherit}
+.au-pat{margin:44px auto 0;position:relative;display:none;width:234px}
+.au-pat svg.lines{position:absolute;inset:0;pointer-events:none}
+.au-grid{display:grid;grid-template-columns:repeat(3,58px);grid-gap:30px;touch-action:none}
+.au-dot{width:58px;height:58px;display:flex;align-items:center;justify-content:center}
+.au-dot i{width:14px;height:14px;border-radius:50%;background:#C9CDD2;transition:.15s}
+.au-dot.act i{transform:scale(1.5);background:#2B2E33}
+/* 완료 화면 */
+#s-done2{background:#fff}
+#s-done2 .body{display:flex;flex-direction:column;align-items:center}
+.dn-check{margin-top:96px;width:108px;height:108px;border-radius:50%;
+  background:linear-gradient(135deg,#43C6AC,#5BD06E);display:flex;align-items:center;justify-content:center;
+  animation:pop .45s cubic-bezier(.2,1.4,.4,1)}
+@keyframes pop{from{transform:scale(.4);opacity:0}}
+.dn-check svg{width:52px;height:52px;color:#fff}
+.dn-msg{margin-top:62px;font-size:26px;font-weight:800;text-align:center;line-height:1.45;letter-spacing:-.4px}
+.dn-msg em{font-style:normal;color:#3D6BE0}
+.dn-acc{margin-top:20px;font-size:15px;color:#8C9298;display:flex;align-items:center;gap:4px}
+.dn-acc svg{width:14px;height:14px;color:#C5C9CF}
+.dn-memo{margin-top:60px;background:#F2F3F5;border-radius:24px;padding:13px 22px;display:flex;align-items:center;gap:8px;
+  font-size:15px;color:#A8ADB3;font-weight:600}
+.dn-memo svg{width:18px;height:18px}
+.dn-ad{margin:auto 16px 18px;background:#DFF6F4;border-radius:18px;padding:18px 20px;width:calc(100% - 32px);
+  display:flex;align-items:center;gap:10px;position:relative}
+.dn-ad .l{flex:1;min-width:0}
+.dn-ad .s1{font-size:13.5px;color:#2E8B84;font-weight:600}
+.dn-ad .s2{font-size:17px;font-weight:800;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dn-ad .adtag{position:absolute;right:12px;top:10px;font-size:9px;font-weight:700;color:#9BB8B5;
+  border:1px solid #BCD8D5;border-radius:8px;padding:1px 6px}
+.dn-ad .cups{flex-shrink:0;display:flex}
+.dn-ad .cup{width:18px;height:36px;border-radius:4px 4px 6px 6px;margin-left:-5px;position:relative;overflow:hidden;border:1px solid rgba(0,0,0,.08)}
+.dn-ad .cup::after{content:'';position:absolute;left:0;right:0;top:0;height:45%;background:#6B4A2F}
+.dn-ad .cup::before{content:'';position:absolute;left:0;right:0;bottom:0;height:55%;background:#E8D5BC}
+.dn-btns{display:flex;gap:11px;padding:0 16px 18px;width:100%}
+.dn-btns .share{flex:0 0 70px;height:58px;border:none;border-radius:16px;background:#3A4159;color:#fff;
+  cursor:pointer;display:flex;align-items:center;justify-content:center}
+.dn-btns .share svg{width:24px;height:24px}
+.dn-btns .ok{flex:1;height:58px;border:none;border-radius:16px;background:var(--kb-yellow);color:#2B2614;
+  font-size:17.5px;font-weight:800;cursor:pointer;font-family:inherit}
+/* 출금계좌 선택 시트 */
+.accsheet .row{display:flex;align-items:center;gap:13px;padding:14px 4px;cursor:pointer;text-align:left}
+.accsheet .row .ava{width:40px;height:40px}
+.accsheet .row b{font-size:15.5px;display:block}
+.accsheet .row span{font-size:13px;color:#8C9298}
+.accsheet .row .ck{margin-left:auto;color:#E0B500;display:none}
+.accsheet .row.sel .ck{display:block}
+
+/* ===== 알림 ===== */
+#s-notif{background:#fff}
+.nt-top{display:flex;align-items:center;padding:6px 16px}
+.nt-top h1{flex:1;text-align:center;font-size:18px;font-weight:800;margin-right:40px}
+.nt-sec{font-size:17px;font-weight:800;padding:18px 22px 6px}
+.nt-hl{background:#FDFBEA}
+.nt-item{display:flex;align-items:flex-start;gap:16px;padding:20px 22px 18px;position:relative;cursor:pointer}
+.nt-item .nic{width:26px;height:26px;flex-shrink:0;margin-top:2px;color:#2B2E33}
+.nt-item .nic svg{width:26px;height:26px}
+.nt-item .nic.err{position:relative}
+.nt-item .nic.err::after{content:'!';position:absolute;right:-4px;bottom:-3px;width:13px;height:13px;border-radius:50%;
+  background:#E5333C;color:#fff;font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center;border:1.5px solid #fff}
+.nt-item .bd{flex:1;min-width:0}
+.nt-item .t{font-size:18px;font-weight:800;letter-spacing:-.3px;line-height:1.35}
+.nt-item .d{font-size:15px;color:#3A3E43;margin-top:7px;line-height:1.55;font-weight:500}
+.nt-item .d .gray{color:#8C9298}
+.nt-item .tm{font-size:14px;color:#B0B5BB;margin-top:8px}
+.nt-item .more{display:inline-flex;align-items:center;gap:5px;margin-top:14px;background:#F2F3F5;border:none;
+  border-radius:10px;padding:11px 16px;font-size:14px;font-weight:700;color:#2B2E33;cursor:pointer;font-family:inherit}
+.nt-item .more svg{width:13px;height:13px}
+.nt-item .ar{position:absolute;right:18px;top:50%;transform:translateY(-50%);color:#C9CDD2}
+.nt-item .ar svg{width:18px;height:18px}
+</style>
+</head>
+<body>
+<div class="stage"><b>카카오뱅크 화면 클론 (고해상도)</b>스크린샷 8화면 정밀 재현 · 패턴잠금부터 시작</div>
+
+<div class="frame" id="frame">
+  <!-- 화면들은 JS에서 채워집니다 -->
+  <div id="screens"></div>
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+/* ============ SVG 아이콘 라이브러리 ============ */
+const I={
+  back:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 5 8 12 15 19"/></svg>',
+  chevDown:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>',
+  chevRight:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>',
+  search:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>',
+  bell:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>',
+  gear:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
+  speaker:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11v2a1 1 0 0 0 1 1h2l4 4V6L6 10H4a1 1 0 0 0-1 1z"/><path d="M14 8.5a4 4 0 0 1 0 7"/><path d="M16.5 6a7 7 0 0 1 0 12"/></svg>',
+  person:'<svg class="ic" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5z"/></svg>',
+  grid:'<svg class="ic" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7" height="7" rx="2.2"/><rect x="14" y="3" width="7" height="7" rx="2.2"/><rect x="3" y="14" width="7" height="7" rx="2.2"/><rect x="14" y="14" width="7" height="7" rx="2.2"/></svg>',
+  dots:'<svg class="ic" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>',
+  star:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" width="20" height="20"><polygon points="12 3 14.6 9 21 9.5 16 13.8 17.6 20 12 16.6 6.4 20 8 13.8 3 9.5 9.4 9"/></svg>',
+  check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 12 10 18 20 6"/></svg>',
+  lock:'<svg viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="10" width="14" height="11" rx="2.4"/><path d="M8 10V7a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2"/></svg>',
+  plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" width="18" height="18"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
+  // 계좌 성격 글리프(흰색 라인)
+  gift:'<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linejoin="round"><rect x="4" y="9" width="16" height="11" rx="1.5"/><path d="M3 9h18M12 9v11"/><path d="M12 9S9.5 4 7.5 5 9 9 12 9zM12 9s2.5-5 4.5-4-1.5 4-4.5 4z"/></svg>',
+  piggy:'<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linejoin="round"><path d="M19 11c0-3-3-5-7-5s-7 2-7 5c0 1.6.9 3 2.3 3.9L7 18h2l.6-1.4c.4.1 1 .1 1.4.1h2c.5 0 1 0 1.4-.1L15 18h2l-.3-3.1C18.1 14 19 12.6 19 11z"/><line x1="9" y1="9" x2="12" y2="9"/><circle cx="15.5" cy="10.5" r=".6" fill="#fff"/><path d="M19.5 10.5h1.5"/></svg>',
+  home:'<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linejoin="round"><path d="M4 11l8-6 8 6"/><path d="M6 10v9h12v-9"/><rect x="10" y="13" width="4" height="6"/></svg>',
+  bank:'<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"><path d="M4 9l8-4 8 4"/><line x1="4" y1="9" x2="20" y2="9"/><line x1="6" y1="9" x2="6" y2="18"/><line x1="10" y1="9" x2="10" y2="18"/><line x1="14" y1="9" x2="14" y2="18"/><line x1="18" y1="9" x2="18" y2="18"/><line x1="3" y1="18" x2="21" y2="18"/></svg>',
+  wave:'<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round"><path d="M3 9c2 0 2 2 4.5 2S10 9 12 9s2 2 4.5 2S19 9 21 9"/><path d="M3 14c2 0 2 2 4.5 2S10 14 12 14s2 2 4.5 2S19 14 21 14"/></svg>',
+
+  homeFill:'<svg class="ic" viewBox="0 0 24 24" fill="currentColor"><path d="M3.5 10.5L12 3.5l8.5 7v9a1.5 1.5 0 0 1-1.5 1.5h-4.5v-6h-5v6H5a1.5 1.5 0 0 1-1.5-1.5z"/></svg>',
+  giftNav:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><rect x="4" y="9.5" width="16" height="10.5" rx="1.6"/><path d="M3 9.5h18M12 9.5V20"/><path d="M12 9.5S9.5 4.5 7.5 5.5 9 9.5 12 9.5zM12 9.5s2.5-5 4.5-4-1.5 4-4.5 4z"/></svg>',
+  aiNav:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><path d="M12 2.8l3.2 6.5 6 3.2-6 3.2L12 22.2l-3.2-6.5-6-3.2 6-3.2z" transform="scale(.9) translate(1.3 1.3)"/></svg>',
+  investNav:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><polyline points="7.5 14.5 10.5 11 13 13 16.5 8.5" stroke-linecap="round"/></svg>',
+  menuNav:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><line x1="4.5" y1="7" x2="19.5" y2="7"/><line x1="4.5" y1="12" x2="19.5" y2="12"/><line x1="4.5" y1="17" x2="13" y2="17"/></svg>',
+  bottle:'<svg viewBox="0 0 24 24" fill="none" stroke="#1E7A3C" stroke-width="1.9" stroke-linejoin="round"><path d="M10 3h4M10.5 3v3.2c0 .8-2.5 2-2.5 4.3V19a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-8.5c0-2.3-2.5-3.5-2.5-4.3V3"/><line x1="8" y1="14" x2="16" y2="14"/></svg>',
+  idcard:'<svg viewBox="0 0 24 24" fill="none" stroke="#2E7BFF" stroke-width="1.9" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><circle cx="8.6" cy="11" r="2"/><path d="M5.8 16c.5-1.6 1.6-2.3 2.8-2.3s2.3.7 2.8 2.3"/><line x1="14" y1="9.5" x2="18.5" y2="9.5" stroke-linecap="round"/><line x1="14" y1="13" x2="18.5" y2="13" stroke-linecap="round"/></svg>',
+  diamond:'<svg viewBox="0 0 24 24"><path d="M12 2.5l4.5 5.5L12 21.5 7.5 8z" fill="#FFD43B"/><path d="M12 2.5l4.5 5.5h-9z" fill="#FFE680"/><path d="M2.5 8h19l-4.5 0L12 21.5z" fill="none"/><path d="M4 8h16L12 21.5z" fill="#F5B400" opacity=".35"/></svg>',
+  gummy:'<svg viewBox="0 0 30 30"><g fill="#7ED321" stroke="#5FAF12" stroke-width=".8"><circle cx="11" cy="7.5" r="2.6"/><circle cx="19" cy="7.5" r="2.6"/><ellipse cx="15" cy="11" rx="5.4" ry="4.6"/><ellipse cx="15" cy="19.5" rx="6.6" ry="6.4"/><ellipse cx="8.6" cy="16.5" rx="2.2" ry="3.4" transform="rotate(20 8.6 16.5)"/><ellipse cx="21.4" cy="16.5" rx="2.2" ry="3.4" transform="rotate(-20 21.4 16.5)"/><ellipse cx="10.6" cy="24.5" rx="2.3" ry="3.2" transform="rotate(12 10.6 24.5)"/><ellipse cx="19.4" cy="24.5" rx="2.3" ry="3.2" transform="rotate(-12 19.4 24.5)"/></g><circle cx="13.6" cy="10.4" r=".7" fill="#3F7A0B"/><circle cx="16.4" cy="10.4" r=".7" fill="#3F7A0B"/></svg>',
+  unicorn:'<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"><path d="M5 16c0-5 3.5-8.5 8-8.5 2 0 3.5.6 4.7 1.6L21 7l-1.2 3.5c.5 1 .7 2.1.7 3.5"/><path d="M13 7.5L15.5 3l1 3.4"/><circle cx="15.8" cy="11.5" r=".7" fill="#fff"/><path d="M5 16v4M9 17v3M14 17v3M19 15.5V20"/></svg>',
+  scaleAd:'<svg class="scale" viewBox="0 0 58 58"><line x1="29" y1="10" x2="29" y2="44" stroke="#C9A227" stroke-width="2.4"/><line x1="11" y1="16" x2="47" y2="16" stroke="#C9A227" stroke-width="2.2"/><path d="M11 16l-5 11h10zM47 16l-5 11h10z" fill="#E8C75A" opacity=".85"/><path d="M6 27a5 4 0 0 0 10 0zM42 27a5 4 0 0 0 10 0z" fill="#C9A227"/><rect x="22" y="44" width="14" height="4" rx="1.5" fill="#C9A227"/><circle cx="29" cy="10" r="2.4" fill="#E8C75A"/></svg>',
+
+  spark:'<svg viewBox="0 0 74 74"><defs><linearGradient id="spg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#35C8F5"/><stop offset=".55" stop-color="#3BD08A"/><stop offset="1" stop-color="#F2E33D"/></linearGradient></defs><path d="M37 4l8.5 24.5L70 37l-24.5 8.5L37 70l-8.5-24.5L4 37l24.5-8.5z" fill="url(#spg)"/><path d="M37 14v46" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".9"/></svg>',
+  docsearch:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h6"/><line x1="8.5" y1="8" x2="14" y2="8" stroke-linecap="round"/><line x1="8.5" y1="12" x2="12" y2="12" stroke-linecap="round"/><circle cx="16.5" cy="15.5" r="3.4"/><line x1="19" y1="18" x2="21.5" y2="20.5" stroke-linecap="round"/></svg>',
+  calc:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="4.5" y="3.5" width="15" height="17" rx="2.5"/><line x1="8.5" y1="8.5" x2="12.5" y2="8.5" stroke-linecap="round"/><line x1="10.5" y1="6.5" x2="10.5" y2="10.5" stroke-linecap="round"/><line x1="14.5" y1="15" x2="17" y2="17.5" stroke-linecap="round"/><line x1="17" y1="15" x2="14.5" y2="17.5" stroke-linecap="round"/></svg>',
+  plane:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><path d="M21 3.5L3 10.8l6.2 2.5L12 20l3-5.5 6-11z"/><path d="M9.2 13.3L21 3.5"/></svg>',
+
+  wcircle:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M7.5 9.5l1.6 5 2-4.2 1.8 4.2 1.6-5" stroke-linejoin="round" stroke-linecap="round" stroke-width="1.7"/></svg>',
+  cardflat:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3.5" y="6" width="17" height="12" rx="2.5"/><line x1="6.5" y1="14.5" x2="11" y2="14.5" stroke-linecap="round"/></svg>',
+  creditck:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><polyline points="8.5 12.2 11 14.7 15.5 9.5" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"/></svg>',
+  megaphone:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M4 10v4a1 1 0 0 0 1 1h2l9 4V5L7 9H5a1 1 0 0 0-1 1z"/><path d="M19.5 10a3.5 3.5 0 0 1 0 4" stroke-linecap="round"/></svg>',
+  headset:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M5 13a7 7 0 0 1 14 0"/><rect x="3.5" y="13" width="4" height="6" rx="2"/><rect x="16.5" y="13" width="4" height="6" rx="2"/><path d="M19 19a3.5 3.5 0 0 1-3.5 3h-2" stroke-linecap="round"/><circle cx="9.5" cy="14.5" r=".7" fill="currentColor"/><circle cx="14.5" cy="14.5" r=".7" fill="currentColor"/><path d="M9.8 17.2c1.3 1 3.1 1 4.4 0" stroke-linecap="round"/></svg>',
+  coupon:'<svg viewBox="0 0 24 24" fill="none"><rect x="2.5" y="7" width="19" height="10" rx="2.5" fill="#7FC8F5"/><path d="M2.5 12h19" stroke="#fff" stroke-width="1.4" stroke-dasharray="2 2"/><circle cx="16.5" cy="12" r="3.6" fill="#FFD43B"/><path d="M15 11l1 2.5 1-2.5" stroke="#8a6d00" stroke-width="1.3" fill="none" stroke-linecap="round"/></svg>',
+  ycard:'<svg viewBox="0 0 24 24" fill="none"><rect x="2.5" y="6.5" width="19" height="11" rx="2.6" fill="#FFD43B"/><rect x="5" y="9.5" width="5" height="3.6" rx="1" fill="#fff"/></svg>',
+  moneybag:'<svg viewBox="0 0 24 24" fill="none"><path d="M9 6.5h6l1.6 2.4c1.9 2 3 4 3 6.6 0 3.5-3.4 6-7.6 6S4.4 19 4.4 15.5c0-2.6 1.1-4.6 3-6.6z" fill="#F5B400"/><path d="M9.5 3.5h5L13 6.5h-2z" fill="#D89A00"/><path d="M9.7 13l1.5 4 .8-2 .8 2 1.5-4" stroke="#fff" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  ball:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="#fff" stroke="#D5D8DC" stroke-width="1.2"/><path d="M12 7l2.4 1.7-.9 2.8h-3l-.9-2.8z" fill="#2B2E33"/><path d="M12 3a9 9 0 0 1 6 2.3M21 12a9 9 0 0 1-2 5.7M5 18a9 9 0 0 1-2-6" stroke="#4C7DF0" stroke-width="1.6" fill="none" stroke-linecap="round"/><circle cx="7" cy="8" r="1.6" fill="#F0454C"/><circle cx="17.5" cy="16" r="1.6" fill="#3BB45F"/></svg>',
+  farmer:'<svg class="farm" viewBox="0 0 120 104"><ellipse cx="62" cy="92" rx="40" ry="9" fill="#E8DFEF"/><path d="M30 80c0-10 14-16 32-16s32 6 32 16c0 7-14 11-32 11s-32-4-32-11z" fill="#B07A45"/><path d="M34 79c4-6 14-9 28-9s24 3 28 9" fill="none" stroke="#8F5E30" stroke-width="2.4"/><ellipse cx="44" cy="70" rx="8" ry="6" fill="#7C5BB5"/><ellipse cx="62" cy="67" rx="9" ry="6.5" fill="#8E6BC9"/><ellipse cx="80" cy="70" rx="8" ry="6" fill="#6F4FA8"/><ellipse cx="24" cy="92" rx="7" ry="5" fill="#7C5BB5"/><ellipse cx="100" cy="90" rx="7" ry="5" fill="#8E6BC9"/><circle cx="62" cy="44" r="20" fill="#F7CE46"/><path d="M40 40c0-8 10-14 22-14s22 6 22 14H40z" fill="#D9A441"/><rect x="36" y="38" width="52" height="5" rx="2.5" fill="#C8923A"/><circle cx="56" cy="48" r="2.2" fill="#3A2E16"/><circle cx="68" cy="48" r="2.2" fill="#3A2E16"/><ellipse cx="62" cy="54" rx="3.4" ry="2.4" fill="#fff"/><path d="M58 60h8l-1.5 8h-5z" fill="#E2603C"/><rect x="84" y="18" width="6" height="34" rx="2.5" fill="#A9743F" transform="rotate(8 87 35)"/><rect x="72" y="12" width="34" height="16" rx="3" fill="#B07A45" transform="rotate(-6 89 20)"/><text x="89" y="24" font-size="9" font-weight="800" fill="#5E3D1C" text-anchor="middle" transform="rotate(-6 89 20)">OPEN</text></svg>',
+  spark1:'<svg viewBox="0 0 44 26" fill="none"><path d="M2 20l6-3 4-9 5 6 6-12 5 14 6-4 8 6" stroke="#4C7DF0" stroke-width="1.6"/><path d="M2 20l6-3 4-9 5 6 6-12 5 14 6-4 8 6V25H2z" fill="#4C7DF0" opacity=".12"/></svg>',
+  spark2:'<svg viewBox="0 0 44 26" fill="none"><path d="M2 18l7 2 5-8 6 9 5-14 6 10 5-6 6 7" stroke="#F0454C" stroke-width="1.6"/><path d="M2 18l7 2 5-8 6 9 5-14 6 10 5-6 6 7V25H2z" fill="#F0454C" opacity=".12"/></svg>',
+
+  ccoin:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M15 9.2A4 4 0 1 0 15 14.8" stroke-linecap="round"/></svg>',
+  tcoupon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><path d="M3.5 9V6.5h17V9a2 2 0 0 0 0 6v2.5h-17V15a2 2 0 0 0 0-6z"/><line x1="9" y1="14.5" x2="15" y2="9.5" stroke-linecap="round"/><circle cx="9.5" cy="10" r=".9" fill="currentColor" stroke="none"/><circle cx="14.5" cy="14" r=".9" fill="currentColor" stroke="none"/></svg>',
+  wcal:'<svg viewBox="0 0 30 30"><rect x="4" y="6" width="22" height="20" rx="4" fill="#FFCB2E"/><rect x="4" y="6" width="22" height="6" rx="3" fill="#F5A623"/><circle cx="10" cy="6.5" r="1.4" fill="#E2884A"/><circle cx="20" cy="6.5" r="1.4" fill="#E2884A"/><path d="M11 16l2 5 2-4 2 4 2-5" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  wpurple:'<svg viewBox="0 0 30 30"><circle cx="15" cy="15" r="11" fill="#8B5CF6"/><path d="M10 11.5l1.8 6.5 2.4-5 2.4 5 1.8-6.5" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  shoe:'<svg viewBox="0 0 30 30"><path d="M5 19c0-3 2-6 4-7l3 3c1 1 2.5 1.5 4 1.5 3.5 0 7 1.5 8 3.5.5 1-.2 2-1.5 2H7c-1.2 0-2-.9-2-2z" fill="#F58A3C"/><path d="M5 21h19" stroke="#D96F25" stroke-width="1.6"/><path d="M12 15.5l1.4-1.4M14 17l1.4-1.4" stroke="#fff" stroke-width="1.4" stroke-linecap="round"/></svg>',
+  frog:'<svg viewBox="0 0 30 30"><circle cx="15" cy="16" r="9.5" fill="#5BBE6E"/><circle cx="10.5" cy="8.5" r="3" fill="#5BBE6E"/><circle cx="19.5" cy="8.5" r="3" fill="#5BBE6E"/><circle cx="10.5" cy="8.5" r="1.2" fill="#2B2E33"/><circle cx="19.5" cy="8.5" r="1.2" fill="#2B2E33"/><path d="M11 17c1 1.5 2.5 2.2 4 2.2s3-.7 4-2.2" stroke="#2B6B3A" stroke-width="1.5" fill="none" stroke-linecap="round"/><circle cx="11.5" cy="14" r="1" fill="#2B6B3A"/><circle cx="18.5" cy="14" r="1" fill="#2B6B3A"/></svg>',
+  oxbox:'<svg viewBox="0 0 30 30"><rect x="5" y="5" width="20" height="20" rx="4" fill="#FFCB2E"/><rect x="5" y="5" width="20" height="20" rx="4" fill="none" stroke="#E8A615" stroke-width="1.4" stroke-dasharray="3 2"/><text x="15" y="20" font-size="12" font-weight="900" fill="#fff" text-anchor="middle">?</text></svg>',
+  survey:'<svg viewBox="0 0 30 30"><rect x="6" y="5" width="16" height="20" rx="2.5" fill="#9FB6C9"/><rect x="9" y="9" width="10" height="1.8" rx=".9" fill="#fff"/><rect x="9" y="13" width="7" height="1.8" rx=".9" fill="#fff"/><path d="M14 22l7-7 3 3-7 7-3.6.6z" fill="#FFCB2E" stroke="#E8A615" stroke-width=".8"/></svg>',
+  robot:'<svg viewBox="0 0 30 30"><rect x="6" y="10" width="18" height="13" rx="6" fill="#7E8AE8"/><circle cx="11.5" cy="16" r="2.6" fill="#fff"/><circle cx="18.5" cy="16" r="2.6" fill="#fff"/><circle cx="11.5" cy="16" r="1.1" fill="#3A3E6B"/><circle cx="18.5" cy="16" r="1.1" fill="#3A3E6B"/><path d="M12.5 20.5h5" stroke="#fff" stroke-width="1.4" stroke-linecap="round"/><line x1="15" y1="6" x2="15" y2="10" stroke="#7E8AE8" stroke-width="1.8"/><circle cx="15" cy="5.5" r="1.6" fill="#F0454C"/><circle cx="5" cy="16.5" r="1.8" fill="#B9C0F2"/><circle cx="25" cy="16.5" r="1.8" fill="#B9C0F2"/></svg>',
+  hotel:'<svg viewBox="0 0 30 30"><rect x="6" y="7" width="13" height="17" rx="1.5" fill="#E88AA0"/><rect x="8.5" y="10" width="2.4" height="2.4" fill="#fff"/><rect x="13" y="10" width="2.4" height="2.4" fill="#fff"/><rect x="8.5" y="14.5" width="2.4" height="2.4" fill="#fff"/><rect x="13" y="14.5" width="2.4" height="2.4" fill="#fff"/><circle cx="20" cy="19" r="4.4" fill="none" stroke="#3A3E43" stroke-width="1.7"/><line x1="23.2" y1="22.2" x2="26" y2="25" stroke="#3A3E43" stroke-width="1.9" stroke-linecap="round"/></svg>',
+  airplane:'<svg viewBox="0 0 30 30"><path d="M6 18L24 8l-6 12-4-3z" fill="#E5333C"/><path d="M14 17l-2 5-1-4z" fill="#B82530"/><path d="M24 8L12 16" stroke="#fff" stroke-width="1" opacity=".6"/><circle cx="8" cy="9" r="2.4" fill="#3BB45F" opacity=".85"/><circle cx="23" cy="20" r="2" fill="#35C0E8" opacity=".85"/></svg>',
+  music:'<svg viewBox="0 0 30 30"><path d="M12 22V8l10-2.5V19" stroke="#35A7E8" stroke-width="2.2" fill="none" stroke-linejoin="round"/><ellipse cx="9.5" cy="22" rx="3" ry="2.4" fill="#35A7E8"/><ellipse cx="19.5" cy="19" rx="3" ry="2.4" fill="#7BD0F5"/></svg>',
+  wizard:'<svg class="wiz" viewBox="0 0 84 76"><ellipse cx="42" cy="68" rx="26" ry="5" fill="#EFE4B8"/><path d="M26 42c0-10 7-17 16-17s16 7 16 17v18c0 4-7 8-16 8s-16-4-16-8z" fill="#fff" stroke="#E3D9B0" stroke-width="1.4"/><circle cx="42" cy="34" r="14" fill="#F7CE46"/><path d="M42 12l5 10H37z" fill="#8E6BC9"/><circle cx="42" cy="12.5" r="2.6" fill="#B79AE8"/><circle cx="37.5" cy="33" r="2" fill="#3A2E16"/><circle cx="46.5" cy="33" r="2" fill="#3A2E16"/><ellipse cx="42" cy="38.5" rx="3" ry="2.1" fill="#E2603C"/><path d="M58 30l8-9" stroke="#A9743F" stroke-width="2.4" stroke-linecap="round"/><path d="M66 21l3-3M69 24l2-5-5 2" stroke="#F5B400" stroke-width="1.6" stroke-linecap="round" fill="none"/><rect x="33" y="52" width="18" height="7" rx="2" fill="#E88AA0"/><path d="M33 55h18" stroke="#fff" stroke-width="1.2"/><path d="M70 50l2.5 2.5M74 46l1.5 1.5" stroke="#F5B400" stroke-width="1.8" stroke-linecap="round"/><path d="M12 36l3 3M9 42l2 2" stroke="#F5B400" stroke-width="1.8" stroke-linecap="round"/></svg>',
+
+  wallet2:'<svg viewBox="0 0 40 40"><rect x="6" y="13" width="26" height="17" rx="4" fill="#F5A23C"/><rect x="6" y="10" width="22" height="8" rx="3" fill="#F7B95E"/><rect x="24" y="18" width="10" height="7" rx="2.5" fill="#FDE0B2"/><circle cx="28" cy="21.5" r="1.5" fill="#E08A1E"/></svg>',
+  envw:'<svg viewBox="0 0 40 40"><rect x="7" y="14" width="26" height="18" rx="3.5" fill="#8B7CE8"/><path d="M7 16l13 9 13-9" stroke="#6F5FD1" stroke-width="1.6" fill="none"/><circle cx="20" cy="13" r="7" fill="#A99CF2"/><path d="M16.5 10.5l1.4 4.6 2.1-3.6 2.1 3.6 1.4-4.6" stroke="#fff" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  scale2:'<svg viewBox="0 0 44 44"><line x1="22" y1="8" x2="22" y2="32" stroke="#E08A1E" stroke-width="2.6"/><line x1="8" y1="13" x2="36" y2="13" stroke="#E08A1E" stroke-width="2.4"/><path d="M8 13l-4 8.5h8zM36 13l-4 8.5h8z" fill="#F5A23C"/><path d="M4 21.5a4 3.2 0 0 0 8 0zM32 21.5a4 3.2 0 0 0 8 0z" fill="#E08A1E"/><rect x="16" y="32" width="12" height="3.5" rx="1.6" fill="#E08A1E"/><circle cx="22" cy="8" r="2.2" fill="#F7B95E"/></svg>',
+  crystal:'<svg viewBox="0 0 44 44"><circle cx="22" cy="19" r="12" fill="#9B6FE8"/><circle cx="22" cy="19" r="12" fill="url(#cb)" opacity=".5"/><defs><radialGradient id="cb" cx=".35" cy=".3"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#9B6FE8" stop-opacity="0"/></radialGradient></defs><path d="M18 15.5q2-2.5 5-2" stroke="#fff" stroke-width="1.6" fill="none" stroke-linecap="round" opacity=".9"/><path d="M14 31h16l2 4.5H12z" fill="#F5A23C"/><path d="M16 31l1.5-2.5h9L28 31z" fill="#E08A1E"/><path d="M33 9l1 2 2 1-2 1-1 2-1-2-2-1 2-1zM10 7l.7 1.4 1.4.7-1.4.7L10 11l-.7-1.4L7.9 9l1.4-.7z" fill="#FFD43B"/></svg>',
+  gauge:'<svg viewBox="0 0 44 44"><path d="M10 28a12 12 0 0 1 24 0" stroke="#E4E7EB" stroke-width="5.5" fill="none" stroke-linecap="round"/><path d="M10 28a12 12 0 0 1 14.5-11.7" stroke="#4C8DF0" stroke-width="5.5" fill="none" stroke-linecap="round"/><circle cx="22" cy="28" r="2.6" fill="#2B2E33"/><line x1="22" y1="28" x2="27" y2="22.5" stroke="#2B2E33" stroke-width="2.2" stroke-linecap="round"/></svg>',
+  gamepad:'<svg viewBox="0 0 24 24" fill="#7ED321"><path d="M7 9h10a4.5 4.5 0 0 1 4.4 5.4l-.7 3.2a2.6 2.6 0 0 1-4.6 1L14.6 17H9.4l-1.5 1.6a2.6 2.6 0 0 1-4.6-1l-.7-3.2A4.5 4.5 0 0 1 7 9z"/><rect x="6.2" y="11.4" width="3.6" height="1.4" rx=".7" fill="#2B2E33"/><rect x="7.3" y="10.3" width="1.4" height="3.6" rx=".7" fill="#2B2E33"/><circle cx="16" cy="11.6" r=".9" fill="#2B2E33"/><circle cx="17.8" cy="13.2" r=".9" fill="#2B2E33"/></svg>',
+
+  finger:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M7 11.5a5 5 0 0 1 10 0v3a9 9 0 0 1-1.5 5"/><path d="M9.5 12a2.5 2.5 0 0 1 5 0v3.5a6.5 6.5 0 0 1-1 3.5"/><path d="M12 12v4a4 4 0 0 1-.6 2.1"/><path d="M4.8 8.5A8 8 0 0 1 12 4a8 8 0 0 1 7.2 4.5"/></svg>',
+  share2:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V4"/><polyline points="8 8 12 4 16 8"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg>',
+  chat:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="11" r="8"/><path d="M9 19.5L8 22l4-2" fill="currentColor" stroke="none"/><circle cx="9" cy="11" r=".8" fill="currentColor" stroke="none"/><circle cx="12" cy="11" r=".8" fill="currentColor" stroke="none"/><circle cx="15" cy="11" r=".8" fill="currentColor" stroke="none"/></svg>',
+
+  swap:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h14M14 4l4 4-4 4"/><path d="M20 16H6M10 12l-4 4 4 4"/></svg>',
+  envline:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><rect x="3" y="5.5" width="18" height="13" rx="1.6"/><path d="M3.5 7l8.5 6 8.5-6"/></svg>',
+  group:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><circle cx="8.5" cy="9" r="3"/><circle cx="16.5" cy="9" r="3"/><path d="M3.5 19c.6-3 2.6-4.5 5-4.5s4.4 1.5 5 4.5" stroke-linecap="round"/><path d="M14.8 14.8c2.2.2 4 1.6 4.7 4.2" stroke-linecap="round"/></svg>',
+  toss:'<svg viewBox="0 0 24 24" fill="#fff"><path d="M9 5h6v3h-2v8a3 3 0 0 1-3 3 3 3 0 0 1-3-3 3 3 0 0 1 3-3v-2a5 5 0 0 0 0 10 5 5 0 0 0 5-5V8h2V5z" opacity=".95"/></svg>',
+};
+/* 상태바 신호/와이파이/배터리 */
+function sbRight(low){return `
+  <span class="r" style="color:#111">
+    <svg width="16" height="11" viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg>
+    <svg width="15" height="11" viewBox="0 0 17 12" fill="currentColor"><path d="M8.5 11.5l2-2.4a3 3 0 0 0-4 0zM8.5 4.2a8 8 0 0 1 5.3 2L12.4 7.9a6 6 0 0 0-7.8 0L3.2 6.2a8 8 0 0 1 5.3-2zM8.5.5a12 12 0 0 1 8 3l-1.4 1.6a10 10 0 0 0-13.2 0L.5 3.5a12 12 0 0 1 8-3z"/></svg>
+    <span style="display:inline-flex;align-items:center;gap:2px"><svg width="22" height="12" viewBox="0 0 25 13"><rect x="0.5" y="0.5" width="21" height="12" rx="3" fill="none" stroke="currentColor" stroke-opacity=".4"/><rect x="2" y="2" width="${low?6:18}" height="9" rx="1.8" fill="${low?'#F8454C':'currentColor'}"/><rect x="22.5" y="4" width="2" height="5" rx="1" fill="currentColor" fill-opacity=".4"/></svg></span>
+  </span>`;
+}
+function sb(time,ret,net){return `<div class="sb"><span class="t">${time}</span>${sbRight()}</div>`;}
+</script>
+<script id="app">
+
+const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
+
+/* ============ 데이터 ============ */
+const accounts={
+  sang:{name:'김범수의 통장',badge:'★',bal:86130,no:'3333-04-8861300',card:'t-slate',
+    db:'#6D898C',df:'#FFFFFF',ava:'#E9EDEE',glyph:'<span style="font-weight:900;font-size:19px;color:#4A5C5E;font-family:Pretendard">B</span>',ppl:[['#E9EDEE','<span style="font-weight:900;font-size:16px;color:#4A5C5E">B</span>']],btns:['카드','이체'],
+    tx:[{dt:'06.10',nm:'편의점 GS25',memo:'#체크카드',v:'-4,500원',bal:'86,130원'},
+        {dt:'06.09',nm:'급여',memo:'#입금',v:'+50,000원',plus:1,bal:'90,630원'},
+        {dt:'06.07',nm:'배달의민족',memo:'#체크카드',v:'-18,900원',bal:'40,630원'},
+        {dt:'06.05',nm:'박지훈',memo:'점심 더치페이',v:'+12,500원',plus:1,bal:'59,530원'},
+        {dt:'06.04',nm:'스타벅스 강남점',memo:'#체크카드',v:'-6,100원',bal:'47,030원'},
+        {dt:'06.02',nm:'쿠팡',memo:'#자동이체',v:'-29,900원',bal:'53,130원'},
+        {dt:'06.01',nm:'통신요금',memo:'#자동이체',v:'-55,000원',bal:'83,030원'},
+        {dt:'05.30',nm:'김민준',memo:'축구 회비',v:'-20,000원',bal:'138,030원'},
+        {dt:'05.28',nm:'카카오뱅크 캐시백지급',memo:'#캐시백',v:'+1,250원',plus:1,bal:'158,030원'},
+        {dt:'05.27',nm:'올리브영',memo:'#체크카드',v:'-15,400원',bal:'156,780원'},
+        {dt:'05.25',nm:'급여',memo:'#입금',v:'+120,000원',plus:1,bal:'172,180원'},
+        {dt:'05.23',nm:'GS칼텍스 주유',memo:'#체크카드',v:'-50,000원',bal:'52,180원'},
+        {dt:'05.21',nm:'배달의민족',memo:'#체크카드',v:'-22,500원',bal:'102,180원'},
+        {dt:'05.19',nm:'최서연',memo:'생일 축하금',v:'-30,000원',bal:'124,680원'},
+        {dt:'05.17',nm:'(US)GOOGLE *YouTubePre…',memo:'#체크카드',v:'-10,450원',bal:'154,680원'},
+        {dt:'05.15',nm:'이마트24',memo:'#체크카드',v:'-3,800원',bal:'165,130원'},
+        {dt:'05.12',nm:'정우진',memo:'중고거래 입금',v:'+45,000원',plus:1,bal:'168,930원'},
+        {dt:'05.10',nm:'넷플릭스',memo:'#자동이체',v:'-13,500원',bal:'123,930원'},
+        {dt:'05.08',nm:'다이소',memo:'#체크카드',v:'-7,000원',bal:'137,430원'},
+        {dt:'05.05',nm:'어버이날 용돈',memo:'#이체',v:'-100,000원',bal:'144,430원'},
+        {dt:'05.02',nm:'급여',memo:'#입금',v:'+180,000원',plus:1,bal:'244,430원'},
+        {dt:'04.29',nm:'배달의민족',memo:'#체크카드',v:'-17,800원',bal:'64,430원'},
+        {dt:'04.27',nm:'박지훈',memo:'영화비',v:'-14,000원',bal:'82,230원'},
+        {dt:'04.25',nm:'편의점 CU',memo:'#체크카드',v:'-5,600원',bal:'96,230원'},
+        {dt:'04.22',nm:'카카오뱅크 캐시백지급',memo:'#캐시백',v:'+870원',plus:1,bal:'101,830원'},
+        {dt:'04.20',nm:'쿠팡이츠',memo:'#체크카드',v:'-19,400원',bal:'100,960원'},
+        {dt:'04.17',nm:'한솔문고',memo:'#체크카드',v:'-16,200원',bal:'120,360원'},
+        {dt:'04.15',nm:'급여',memo:'#입금',v:'+136,560원',plus:1,bal:'136,560원'}]},
+  depo:{name:'보통예탁금',bal:0,no:'3333-77-0042100',card:'t-green',
+    db:'#3BB45F',df:'#FFFFFF',ava:'#2E9A4E',glyph:I.bottle.replace(/#1E7A3C/g,'#fff'),ppl:[['#2E9A4E',I.bottle.replace(/#1E7A3C/g,'#fff')]],btns:['이체'],
+    tx:[{dt:'05.30',nm:'이체 출금',memo:'#이체',v:'-30,000원',bal:'0원'},
+        {dt:'05.28',nm:'입금',memo:'#이체',v:'+30,000원',plus:1,bal:'30,000원'},
+        {dt:'05.20',nm:'이체 출금',memo:'#이체',v:'-50,000원',bal:'0원'},
+        {dt:'05.18',nm:'입금',memo:'#이체',v:'+50,000원',plus:1,bal:'50,000원'},
+        {dt:'05.05',nm:'이체 출금',memo:'#이체',v:'-20,000원',bal:'0원'},
+        {dt:'05.03',nm:'입금',memo:'#이체',v:'+20,000원',plus:1,bal:'20,000원'},
+        {dt:'04.25',nm:'이체 출금',memo:'#이체',v:'-10,000원',bal:'0원'},
+        {dt:'04.24',nm:'입금',memo:'#이체',v:'+10,000원',plus:1,bal:'10,000원'},
+        {dt:'04.15',nm:'계좌 개설',memo:'#신규',v:'+0원',plus:1,bal:'0원'}]},
+  uni:{name:'유니콘밸리 모임통장',bal:95591,no:'3333-21-9559100',card:'t-purple',
+    db:'#7C6FDB',df:'#FFFFFF',ava:'#6457C2',glyph:I.unicorn,ppl:[['#6457C2',I.unicorn],['#9C92E8',I.person]],btns:['이체'],
+    tx:[{dt:'06.08',nm:'회비 입금',memo:'#모임',v:'+10,000원',plus:1,bal:'95,591원'},
+        {dt:'06.05',nm:'김민준',memo:'#회비',v:'+10,000원',plus:1,bal:'85,591원'},
+        {dt:'06.01',nm:'모임 식사',memo:'#모임카드',v:'-48,000원',bal:'75,591원'},
+        {dt:'05.29',nm:'박지훈',memo:'#회비',v:'+10,000원',plus:1,bal:'123,591원'},
+        {dt:'05.25',nm:'회비 입금',memo:'#모임',v:'+15,000원',plus:1,bal:'113,591원'},
+        {dt:'05.22',nm:'스터디룸 대여',memo:'#모임카드',v:'-24,000원',bal:'98,591원'},
+        {dt:'05.18',nm:'최서연',memo:'#회비',v:'+10,000원',plus:1,bal:'122,591원'},
+        {dt:'05.15',nm:'모임 카페',memo:'#모임카드',v:'-18,600원',bal:'112,591원'},
+        {dt:'05.11',nm:'정우진',memo:'#회비',v:'+10,000원',plus:1,bal:'131,191원'},
+        {dt:'05.08',nm:'회식 1차',memo:'#모임카드',v:'-86,000원',bal:'121,191원'},
+        {dt:'05.04',nm:'김민준',memo:'#회비',v:'+10,000원',plus:1,bal:'207,191원'},
+        {dt:'04.30',nm:'박지훈',memo:'#회비',v:'+10,000원',plus:1,bal:'197,191원'},
+        {dt:'04.27',nm:'모임 식사',memo:'#모임카드',v:'-52,400원',bal:'187,191원'},
+        {dt:'04.22',nm:'최서연',memo:'#회비',v:'+10,000원',plus:1,bal:'239,591원'},
+        {dt:'04.18',nm:'엠티 숙소 예약',memo:'#모임카드',v:'-120,000원',bal:'229,591원'},
+        {dt:'04.14',nm:'정우진',memo:'#회비',v:'+10,000원',plus:1,bal:'349,591원'}]},
+  event:{name:'경조사',badge:'★',bal:87,no:'3333-33-3333333',card:'c-event',
+    db:'#FFE24A',df:'#2B2614',ava:'#F5B400',glyph:I.gift,ppl:[['#F5B400',I.gift]],btns:['카드','이체'],
+    tx:[{dt:'06.07',nm:'김민수',memo:'결혼 축의금',v:'-100,000원',bal:'87원'},
+        {dt:'06.01',nm:'모임 회비',memo:'#자동이체',v:'+50,000원',plus:1,bal:'100,087원'},
+        {dt:'05.24',nm:'박서연',memo:'돌잔치',v:'-30,000원',bal:'50,087원'},
+        {dt:'05.15',nm:'모임 회비',memo:'#자동이체',v:'+50,000원',plus:1,bal:'80,087원'},
+        {dt:'05.06',nm:'장례 조의금',memo:'#이체',v:'-50,000원',bal:'30,087원'},
+        {dt:'04.28',nm:'모임 회비',memo:'#자동이체',v:'+50,000원',plus:1,bal:'80,087원'},
+        {dt:'04.16',nm:'정다현',memo:'결혼 축의금',v:'-70,000원',bal:'30,087원'}]},
+  saving:{name:'최&민 미래 적금',bal:126006,no:'3333-33-3333333',card:'c-saving',
+    db:'#586071',df:'#FFFFFF',ava:'#3D4555',glyph:I.piggy,ppl:[['#3D4555',I.piggy],['#7A8294',I.person]],btns:[],
+    tx:[{dt:'06.10',nm:'자동 적립',memo:'#정기적금',v:'+30,000원',plus:1,bal:'126,006원'},
+        {dt:'05.10',nm:'자동 적립',memo:'#정기적금',v:'+30,000원',plus:1,bal:'96,006원'},
+        {dt:'05.01',nm:'이자 지급',memo:'#이자',v:'+406원',plus:1,bal:'66,006원'},
+        {dt:'04.10',nm:'자동 적립',memo:'#정기적금',v:'+30,000원',plus:1,bal:'65,600원'}]},
+  living:{name:'생활비 통장',bal:275560,no:'3333-33-3333333',card:'c-living',
+    db:'#A8D9D3',df:'#173F3B',ava:'#5BA89E',glyph:I.home,ppl:[['#5BA89E',I.home],['#8FB7C9',I.person]],btns:['카드','이체'],
+    tx:[{dt:'06.11',nm:'서준호',memo:'유산균',v:'-23,760원',bal:'275,560원'},
+        {dt:'06.11',nm:'서준호',memo:'치킨',v:'-17,600원',bal:'299,320원'},
+        {dt:'06.08',nm:'네이버페이결제',memo:'#자동이체',v:'-4,900원',bal:'316,920원'},
+        {dt:'06.05',nm:'카카오뱅크 캐시백지급',memo:'#캐시백',v:'+317원',plus:1,bal:'321,820원'},
+        {dt:'06.03',nm:'쿠팡',memo:'#자동이체',v:'-100,000원',bal:'321,503원'},
+        {dt:'05.30',nm:'(US)GOOGLE *YouTubePre…',memo:'#체크카드',v:'-3,030원',bal:'421,503원'},
+        {dt:'05.27',nm:'서준호',memo:'유산균',v:'-54,036원',bal:'424,533원'},
+        {dt:'05.24',nm:'쿠팡',memo:'#자동이체',v:'-100,000원',bal:'478,569원'},
+        {dt:'05.22',nm:'쿠팡이츠',memo:'#체크카드',v:'+15,900원',plus:1,bal:'578,569원'},
+        {dt:'05.19',nm:'이마트 장보기',memo:'#체크카드',v:'-68,420원',bal:'562,669원'},
+        {dt:'05.15',nm:'관리비',memo:'#자동이체',v:'-180,000원',bal:'631,089원'},
+        {dt:'05.12',nm:'생활비 입금',memo:'#이체',v:'+400,000원',plus:1,bal:'811,089원'},
+        {dt:'05.08',nm:'배달의민족',memo:'#체크카드',v:'-26,900원',bal:'411,089원'},
+        {dt:'05.05',nm:'다이소',memo:'#체크카드',v:'-12,300원',bal:'437,989원'},
+        {dt:'05.01',nm:'통신요금',memo:'#자동이체',v:'-89,000원',bal:'450,289원'},
+        {dt:'04.27',nm:'서준호',memo:'홈쇼핑',v:'-45,800원',bal:'539,289원'},
+        {dt:'04.23',nm:'전기요금',memo:'#자동이체',v:'-38,210원',bal:'585,089원'},
+        {dt:'04.19',nm:'카카오뱅크 캐시백지급',memo:'#캐시백',v:'+512원',plus:1,bal:'623,299원'},
+        {dt:'04.15',nm:'생활비 입금',memo:'#이체',v:'+400,000원',plus:1,bal:'622,787원'}]},
+  ibk:{name:'보통예금(IBK평생한가족통장)',bal:2,no:'1002-100-210024',card:'c-ibk',
+    db:'#E6EBEF',df:'#2B2E33',ava:'#2B3A67',glyph:I.bank,ppl:[['#2B3A67',I.bank]],btns:['이체'],
+    tx:[{dt:'06.05',nm:'관리비',memo:'#자동이체',v:'-180,000원',bal:'2원'},
+        {dt:'06.01',nm:'급여',memo:'#입금',v:'+180,002원',plus:1,bal:'180,002원'},
+        {dt:'05.05',nm:'관리비',memo:'#자동이체',v:'-180,000원',bal:'0원'},
+        {dt:'05.01',nm:'급여',memo:'#입금',v:'+180,000원',plus:1,bal:'180,000원'},
+        {dt:'04.05',nm:'관리비',memo:'#자동이체',v:'-180,000원',bal:'0원'},
+        {dt:'04.01',nm:'급여',memo:'#입금',v:'+180,000원',plus:1,bal:'180,000원'}]},
+};
+const products=[
+  {nm:'세이프박스',d:'여유자금을 따로 보관하세요',rate:'연 2.00%'},
+  {nm:'저금통',d:'매일매일 조금씩 쌓여요',rate:'연 8.00%'},
+  {nm:'정기예금',d:'실시간 이자가 쌓여요',rate:'연 4.00%',per:'12개월 기준'},
+  {nm:'자유적금',best:1,d:'매일/매주/매월 자유롭게',rate:'연 4.20%',per:'12개월 기준'},
+  {nm:'기록통장',d:'최애적금으로 세상처음 돈버는 덕질',rate:'연 2.00%'},
+  {nm:'26주적금',best:1,d:'캐릭터와 함께 즐기는 도전',rate:'연 6.00%',per:'6개월 기준'},
+  {nm:'한달적금',best:1,d:'한달동안 매일매일 저금',rate:'연 8.00%',per:'31일 기준'},
+];
+const recipients=[
+  {sec:'mine'},
+  {nm:'우리꿈저축예금',bank:'우리',c:'#1B6FCB',g:I.wave},
+  {nm:'경조사',bank:'카카오뱅크',c:'#FEE500',g:I.gift.replace(/#fff/g,'#2B2614')},
+  {nm:'보통예금(IBK평생한가족통장)',bank:'기업',c:'#2B3A67',g:I.bank},
+  {sec:'recent'},
+  {nm:'박지훈',bank:'토스뱅크',c:'#2E5BFF',g:I.toss,star:1},
+  {nm:'박지훈',bank:'기업',c:'#2B3A67',g:I.bank,star:1},
+];
+
+/* ============ 아바타 헬퍼 ============ */
+function ava(bg,glyph,size){return `<span class="ava" style="background:${bg}">${glyph}</span>`;}
+
+/* ============ 탭바 ============ */
+function tabbar(active){
+  const it=[['home',I.person],['products',I.grid],['bell',I.bell],['more',I.dots]];
+  return `<div class="tabbar">`+it.map(([k,ic])=>
+    `<button class="${active===k?'active':''}" data-tab="${k}">${ic}${k==='bell'?'<span class="reddot"></span>':''}</button>`).join('')+`</div>`;
+}
+
+/* ============ 화면 빌드 ============ */
+function tab2(active){
+  const it=[['home',I.homeFill,'홈',0],['benefit',I.giftNav,'혜택',1],['ai',I.aiNav,'AI',0],['invest',I.investNav,'투자',0],['all',I.menuNav,'전체',1]];
+  return `<div class="tab2">`+it.map(([k,ic,lb,dot])=>
+    `<button class="${active===k?'active':''}" data-tab2="${k}">${ic}<span class="lb">${lb}</span>${dot?'<span class="reddot"></span>':''}</button>`).join('')+`</div>`;
+}
+
+function homeCard(key){
+  const a=accounts[key];
+  return `<div class="acct ${a.card}" data-acct="${key}">
+    <div class="more"><b></b><b></b><b></b></div>
+    <div class="nm">${ava(a.ava,a.glyph)} <span class="nmtxt">${a.name}</span>${a.badge?'<span class="star">★</span>':''}</div>
+    <div class="amt">${a.bal.toLocaleString('ko-KR')}원</div>
+    ${a.btns.length?`<div class="btns">${a.btns.map(b=>`<span class="${b==='이체'?'t-send':''}">${b}</span>`).join('')}</div>`:''}
+  </div>`;
+}
+function acc2Card(key,extra=''){
+  const a=accounts[key];
+  return `<div class="acc2 ${a.card}" data-acct="${key}">
+    <div class="more"><b></b><b></b><b></b></div>
+    <div class="row1"><span class="ava">${a.glyph}</span>
+      <div style="min-width:0;flex:1">
+        <div class="nm"><span class="nmtxt">${a.name}</span>${a.badge?'<span class="star">★</span>':''}</div>
+        <div class="amt">${a.bal.toLocaleString('ko-KR')}원</div>
+      </div></div>
+    ${a.btns.length?`<div class="btns">${a.btns.map(b=>`<span class="${b==='이체'?'t-send':''}">${b}</span>`).join('')}</div>`:''}
+    ${extra}</div>`;
+}
+function scrHome(){return `<section class="screen on" id="s-home">
+  ${sb('11:35')}
+  <div class="h2-top"><h1>김범수</h1><span class="bell" data-go="notif" style="cursor:pointer">${I.bell}</span></div>
+  <div class="body">
+    <div class="h2-bubble">${I.diamond} 요즘 금값 분위기, 어떨까요?</div>
+    <div class="h2-ad">
+      <div class="l"><div class="s1">든든한 연금 원하다면</div><div class="s2">돌려받는 연금저축보험</div>
+        <div class="s3">생명보험협회 심의필 제2026-01381호(2026.02.24~2027.02.23)</div></div>
+      ${I.scaleAd}<span class="adtag">AD</span>
+    </div>
+    <div class="h2-chips"><span>${I.idcard} 모바일 신분증</span><span id="go-myacc">내 계좌</span><span>전체 서비스 보기</span></div>
+    ${acc2Card('sang',`<div class="divider"></div>
+      <div class="sub">세이프박스 <span class="r">600,000원</span></div>
+      <div class="sub">저금통 <span class="bear">${I.gummy}</span></div>`)}
+    ${acc2Card('depo')}
+    ${acc2Card('uni')}
+    <div class="hb-aichip" data-go="ai">${I.spark.replace('viewBox','width="18" height="18" viewBox')} 오늘 증시, 3줄로 요약해 드려요</div>
+    <div class="hb-gather">
+      <div class="hd">모아보기</div>
+      <div class="hb-grow"><span class="gic">${I.wallet2}</span>
+        <div><div class="s1">모임통장 4개</div><div class="s2">245,837원</div></div></div>
+      <div class="hb-grow"><span class="gic">${I.envw}</span>
+        <div><div class="s1">내 대출한도 조회하고</div><div class="s2">누구나 1천원 받아가세요</div></div></div>
+    </div>
+    <button class="hb-add">${I.plus} 상품 추가</button>
+    <div class="hb-foot"><span>간편 홈</span><span class="bar"></span><span>화면 편집</span></div>
+    <div class="hb-shorts">
+      <div class="hb-short"><span class="sic">${I.scale2}</span><div class="t">신용대출<br>비교하기</div></div>
+      <div class="hb-short"><span class="sic">${I.crystal}</span><div class="t">방구석<br>심리테스트</div></div>
+      <div class="hb-short"><span class="sic">${I.gauge}</span><div class="t">신용점수<br>알아보기</div></div>
+    </div>
+    <div class="hb-ad">
+      <div class="l">
+        <div class="s1"><span class="app">${I.gamepad}</span>Freecash 앱 지금 다운로드 ›</div>
+        <div class="s2">게임하고 기프트카드 받자!</div>
+        <div class="s3"><span class="adb">AD</span>Moloco 광고입니다.</div>
+      </div>
+      <div class="gift-img"><span class="spk" style="top:6px;left:10px">✦</span><span class="spk" style="bottom:8px;right:12px">✦</span>
+        <span class="gc">GIFT CARD</span></div>
+    </div>
+    <div style="height:14px"></div>
+  </div>
+  ${tab2('home')}<div class="homebar"></div></section>`;}
+function scrProducts(){return `<section class="screen" id="s-products">
+  ${sb('3:22')}
+  <div class="ptabs"><span>전체</span><span class="on">예적금</span><span>카드</span><span>대출</span><span>서비스</span><span>투자</span><span>min…</span></div>
+  <div class="body">${products.map(p=>`<div class="prod">
+    <div class="pl"><div class="nm">${p.nm}${p.best?'<span class="best">최고</span>':''}</div><div class="d">${p.d}</div></div>
+    <div class="pr"><div class="rate">${p.rate}</div>${p.per?`<div class="per">${p.per}</div>`:''}</div></div>`).join('')}</div>
+  ${tabbar('products')}<div class="homebar"></div></section>`;}
+
+function scrDetail(){return `<section class="screen" id="s-detail">
+  <div class="sb" id="det-sb" style="color:var(--df)"><span class="t">10:57</span>${sbRight()}</div>
+  <div class="det-top">
+    <button class="iconbtn" data-back="home">${I.back}</button>
+    <h1 id="det-title">생활비 통장</h1>
+    <div class="ri"><button class="iconbtn">${I.speaker}</button><button class="iconbtn">${I.gear}</button></div>
+  </div>
+  <div class="body">
+    <div class="det-head">
+      <div class="accno"><span id="det-accno">3333-33-3333333</span> · 안심계좌번호 ${I.chevDown}</div>
+      <div class="total" id="det-total">275,560원</div>
+      <div class="ppl" id="det-ppl"></div>
+      <div class="rule">회비규칙 설정 ${I.chevRight}</div>
+    </div>
+    <div class="det-filter"><span class="srch">${I.search}</span><span class="opt">1개월 · 전체 · 최신순 ${I.chevDown}</span></div>
+    <div id="tx-list"></div><div style="height:96px"></div>
+  </div>
+  <button class="det-float" id="det-transfer"><span class="wc">₩</span> 입출금</button>
+  ${tabbar('')}<div class="homebar"></div></section>`;}
+
+function scrMyacc(){return `<section class="screen" id="s-myacc">
+  ${sb('8:53')}
+  <div class="ma-top"><button class="iconbtn" data-back="home"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></button></div>
+  <div class="ma-title">내 계좌</div>
+  <div class="ma-pills"><span class="on">예적금</span><span>대출</span><span>다른금융</span></div>
+  <div class="body">
+    <div class="ma-total"><span>총 2개</span><span>220,798원</span></div>
+    ${['event','living','saving'].map((k,idx)=>{const a=accounts[k];const amt=k==='event'?'0원':k==='living'?'220,798원':'9,000원';
+      return (idx===2?'<div class="ma-sub">참여중인 모임통장 1</div>':'')+
+      `<div class="ma-card" data-acct="${k}">${ava(a.ava,a.glyph)}
+        <div class="l"><b>${a.name}</b><span>모임통장 · ${a.no}</span></div>
+        <div class="r">${amt} <span class="ar">${I.chevRight}</span></div></div>`;}).join('')}
+    <div class="ma-link"><u>해지계좌 보기</u></div>
+  </div><div class="homebar"></div></section>`;}
+
+function scrRecipient(){return `<section class="screen" id="s-recipient">
+  ${sb('8:55',true)}
+  <div class="rc-top"><h1>이체</h1><span class="close" data-back="home">닫기</span></div>
+  <div class="rc-search">${I.search} 받는사람 이름, 또는 계좌번호</div>
+  <div class="rc-tabs"><span class="on">계좌번호</span><span>카카오톡 친구</span></div>
+  <div class="body">${recipients.map(r=>{
+    if(r.sec==='mine')return `<div class="rc-sec">내 계좌 <span class="cnt">9개 ${I.chevDown}</span></div>`;
+    if(r.sec==='recent')return `<div class="rc-sec">최근 이체</div>`;
+    return `<div class="rc-row" data-name="${r.nm}" data-bank="${r.bank}">
+      <span class="ava" style="background:${r.c}">${r.g}</span>
+      <div class="info"><b>${r.nm}</b><span>${r.bank}</span></div>
+      ${r.star?`<span class="star">${I.star}</span>`:''}</div>`;}).join('')}
+    <div style="height:90px"></div></div>
+  <div class="rc-bottom">${I.plus} 계좌번호 직접입력</div><div class="homebar"></div></section>`;}
+
+function scrAmount(){return `<section class="screen" id="s-amount">
+  ${sb('6:56')}
+  <div class="am-top"><button class="iconbtn" data-back="recipient">${I.back}</button>
+    <h1 id="am-name"><span class="nmtxt">김범수</span> ${I.chevDown}</h1><span class="cancel" data-back="home">취소</span></div>
+  <div class="am-sub" id="am-sub">카카오뱅크 3333-31-7235789</div>
+  <div class="am-amount empty" id="am-amt">보낼금액</div>
+  <div class="am-hint" id="am-hint"></div>
+  <div style="margin-top:auto"></div>
+  <div class="am2-acc" id="am2-acc"><span class="txt" id="am2-acc-txt">김범수의 통장 (6845) : 117,840원</span>${I.chevDown}</div>
+  <div class="am2-quick">
+    <button data-add="10000">+1만</button><button data-add="50000">+5만</button>
+    <button data-add="100000">+10만</button><button data-add="all">전액</button>
+  </div>
+  <div class="am-keypad" id="am-keypad"></div>
+  <button class="am2-next" id="am-next">다음</button>
+  <div class="sheet-dim" id="acc-dim"></div>
+  <div class="sheet accsheet" id="acc-sheet" style="text-align:left">
+    <div style="font-size:18px;font-weight:800;margin-bottom:14px">출금계좌 선택</div>
+    <div id="acc-list"></div>
+  </div>
+  <div class="homebar"></div></section>`;}
+
+function scrMemo(){return `<section class="screen" id="s-memo">
+  ${sb('6:56')}
+  <div class="am-top"><button class="iconbtn" data-back="amount">${I.back}</button>
+    <h1 id="mm-name"><span class="nmtxt">김범수</span> ${I.chevDown}</h1><span class="cancel" data-back="home">취소</span></div>
+  <div class="am-sub">카카오뱅크 3333-31-7235789</div>
+  <div class="am-amount" id="mm-amt">2,500<span class="wn">원</span></div>
+  <div class="am-hint"></div>
+  <div style="margin-top:auto"></div>
+  <div class="am2-acc"><span class="txt" id="mm-acc-txt">김범수의 통장 (6845) : 117,840원</span>${I.chevDown}</div>
+  <div class="mm-fld">받는 분에게 표기 <span class="q">?</span><input id="mm-to" value="김범수"></div>
+  <div class="mm-fld">나에게 표기<input id="mm-me" placeholder="미입력시 수취인명"></div>
+  <div class="mm-foot"><span style="display:flex;align-items:center;gap:4px">${I.plus} 추가이체</span><span class="more">더보기</span></div>
+  <div id="mm-spacer" style="height:152px;flex-shrink:0"></div>
+  <button class="am2-next on" id="mm-next">다음</button>
+  <div class="sheet-dim" id="cf-dim"></div>
+  <div class="sheet" id="cf-sheet">
+    <div class="bicon">B</div>
+    <div class="q1"><b id="cf-who">김범수</b>님에게 <b id="cf-amt">2,500원</b><br>이체하시겠습니까?</div>
+    <div class="acc">받는계좌 : 카카오뱅크 3333-31-7235789</div>
+    <div class="btns"><button class="cancel" id="cf-cancel">취소</button><button class="ok" id="cf-ok">이체하기</button></div>
+  </div>
+  <div class="homebar"></div></section>`;}
+
+function scrAuth2(){return `<section class="screen" id="s-auth2">
+  ${sb('6:56')}
+  <div class="am-top"><button class="iconbtn" data-back="memo">${I.back}</button>
+    <h1>이체 인증</h1><span class="cancel" data-back="home">취소</span></div>
+  <div class="body" style="text-align:center">
+    <div class="au-title" id="au-title">지문으로 인증해 주세요</div>
+    <div class="au-sub" id="au-sub">등록된 지문을 센서에 올려주세요</div>
+    <div class="au-fp" id="au-fp">${I.finger}<svg class="ring" viewBox="0 0 142 142"><circle cx="71" cy="71" r="68"/></svg></div>
+    <div class="au-ok" id="au-ok">${I.check}</div>
+    <div class="au-pat" id="au-pat">
+      <svg class="lines" id="au-lines" width="234" height="234" viewBox="0 0 234 234"></svg>
+      <div class="au-grid" id="au-grid">${[0,1,2,3,4,5,6,7,8].map(i=>`<div class="au-dot" data-p="${i}"><i></i></div>`).join('')}</div>
+    </div>
+    <button class="au-switch" id="au-switch">패턴으로 인증하기</button>
+  </div>
+  <div class="homebar"></div></section>`;}
+
+function scrDone2(){return `<section class="screen" id="s-done2">
+  ${sb('6:56')}
+  <div class="body">
+    <div class="dn-check">${I.check}</div>
+    <div class="dn-msg"><span id="dn-who">김범수</span>님에게<br><em id="dn-amt">2,500원</em> 보냈어요</div>
+    <div class="dn-acc">카카오뱅크 3333-31-7235789 ${I.chevRight}</div>
+    <div class="dn-memo">${I.chat} 메모입력..</div>
+    <div class="dn-ad"><span class="adtag">AD</span>
+      <div class="l"><div class="s1">GS Pay로 아이스라떼 천원할인</div><div class="s2">카페25 올데이 프로모션</div></div>
+      <div class="cups"><span class="cup"></span><span class="cup"></span><span class="cup"></span><span class="cup"></span></div>
+    </div>
+    <div class="dn-btns"><button class="share">${I.share2}</button><button class="ok" id="dn-ok">확인</button></div>
+  </div>
+  <div class="homebar"></div></section>`;}
+
+
+function scrOb(){return `<section class="screen" id="s-ob">
+  ${sb('8:54')}
+  <div class="ob-top"><span style="width:40px"></span><h1>오픈뱅킹 이용동의</h1><span class="cancel" data-back="home">취소</span></div>
+  <div class="ob-head">오픈뱅킹 서비스를 계속 이용하시려면<br>아래 약관에 동의해주세요.</div>
+  <div class="ob-card">
+    <div class="ob-all"><span class="ck">${I.check}</span>약관 전체동의 <span class="ar">${I.chevRight}</span></div>
+    ${['개인(신용)정보 수집·이용 동의서','금융거래정보제공동의서','기업은행 금융정보조회 약관','국민은행 금융정보조회 약관','우리은행 금융정보조회 약관','상호저축은행 금융정보조회 약관','미래에셋증권 금융정보조회 약관']
+      .map(t=>`<div class="ob-item"><span class="ck">${I.check}</span><span class="t">${t}</span><span class="ar">${I.chevRight}</span></div>`).join('')}
+  </div>
+  <button class="ob-agree" id="ob-agree">동의하기</button><div class="homebar"></div></section>`;}
+
+
+function scrAi(){return `<section class="screen" id="s-ai">
+  ${sb('11:37')}
+  <div class="ai-top"><button class="iconbtn" data-back="home">${I.back}</button>
+    <h1>카카오뱅크 AI <span class="beta">Beta</span></h1>
+    <button class="iconbtn">${I.dots}</button></div>
+  <div class="ai-body" id="ai-body">
+    <div class="ai-hero">${I.spark.replace('class="ic"','')}
+      <div class="t">김범수님<br>AI가 도와드릴게요</div></div>
+    <div class="ai-msgs" id="ai-msgs"></div>
+    <div class="ai-chips">
+      <button class="ai-chip" data-q="이번달 후불교통대금 조회하기">${I.docsearch}<span class="txt">이번달 후불교통대금 조회하기</span></button>
+      <button class="ai-chip" data-q="2차 고유가 피해지원금 어떻게 신청해?">${I.search}<span class="txt">2차 고유가 피해지원금 어떻게 신청해?</span></button>
+      <button class="ai-chip" data-q="최대 4만 원, 직장인 점심값을 지원한다고?">${I.search}<span class="txt">최대 4만 원, 직장인 점심값을 지원한다고?</span></button>
+      <button class="ai-chip" data-q="같은 10만 원, 어떻게 써야 덜 후회할까?">${I.search}<span class="txt">같은 10만 원, 어떻게 써야 덜 후회할까?</span></button>
+      <button class="ai-chip" data-q="1억 연금 있으면 20년간 매달 얼마 줘?">${I.calc}<span class="txt">1억 연금 있으면 20년간 매달 얼마 줘?</span></button>
+      <button class="ai-chip" data-q="이수민(4271)에게 이체해줘"><span class="av">${I.bottle.replace(/#1E7A3C/g,'#fff')}</span><span class="txt">이수민(4271)에게 이체해줘</span></button>
+    </div>
+  </div>
+  <div class="ai-inputbar"><input id="ai-input" placeholder="메시지를 입력해주세요">
+    <button class="send" id="ai-send">${I.plane}</button></div>
+  <div class="homebar"></div></section>`;}
+
+function scrInvest(){return `<section class="screen" id="s-invest">
+  ${sb('11:38')}
+  <div class="iv-top"><span class="t1">투자</span><span class="t2">발견</span></div>
+  <div class="iv-ticker">
+    <div class="iv-tk"><div><div class="nm">코스피</div><div class="v">3,412.40<em class="dn">-1.8%</em></div></div>${I.spark1}</div>
+    <div class="iv-tk"><div><div class="nm">코스닥</div><div class="v">955.90<em class="up">+0.5%</em></div></div>${I.spark2}</div>
+    <div class="iv-tk"><div><div class="nm">달러 환율 USD</div><div class="v">1,529.85<em class="up">+0.2%</em></div></div>${I.spark2}</div>
+  </div>
+  <div class="body">
+    <div class="iv-banner"><div class="l"><div class="s1">투자탭 오픈!</div>
+      <div class="s2">미션 완료하고<br>투자금을 받아보세요</div></div>${I.farmer}</div>
+    <div class="iv-sec">새로 나온 상품</div>
+    <div class="iv-item"><span class="lg" style="background:#1A46E5">S</span>
+      <div class="mid"><b>신한카드</b><span>한국투자증권 · 채권</span></div>
+      <div class="rt"><div class="rate">연 3.55%</div><div class="per">2개월</div></div></div>
+    <div class="iv-item"><span class="lg" style="background:#fff;border:1px solid #E5E7EA">${'<svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M7 14a4 4 0 1 1 1-7.9A5 5 0 0 1 17.5 8 3.5 3.5 0 0 1 17 15H7z" fill="#35C0E8"/></svg>'}</span>
+      <div class="mid"><b>엠지캐피탈</b><span>한국투자증권 · 채권</span></div>
+      <div class="rt"><div class="rate">연 4.61%</div><div class="per">1년 5개월</div></div></div>
+    <div class="iv-item"><span class="lg" style="background:#0E3A5C;font-size:11px">posco</span>
+      <div class="mid"><b>POSCO</b><span>한국투자증권 · 채권</span></div>
+      <div class="rt"><div class="rate">연 3.74%</div><div class="per">3개월</div></div></div>
+    <div class="iv-promos">
+      <div class="iv-promo p1"><span class="app" style="background:#2D52E0">한투<span class="rd"></span></span>
+        <div class="s1">한국투자증권 발행어음</div><div class="s2">연 3.90%(세전, 6개월)</div></div>
+      <div class="iv-promo p2"><span class="app" style="background:#1B62B5;font-size:11px">mPOP</span>
+        <div class="s1">6월 2주 공모주</div><div class="s2">삼성증권 계좌로 청약</div></div>
+    </div>
+    <div style="height:14px"></div>
+  </div>
+  ${tab2('invest')}<div class="homebar"></div></section>`;}
+
+function scrAllmenu(){return `<section class="screen" id="s-allmenu">
+  ${sb('11:38')}
+  <div class="al-top"><h1>김범수 ${I.chevRight}</h1><span class="sp"></span>
+    <button class="iconbtn">${I.search}</button><button class="iconbtn">${I.gear}</button>
+    <button class="aichat" data-go="ai">AI 상담</button></div>
+  <div class="body">
+    <div class="al-quick">
+      <button class="al-q" data-go="myacc">${I.wcircle}내 계좌</button>
+      <button class="al-q">${I.cardflat}내 카드</button>
+      <button class="al-q">${I.creditck}<span class="rd"></span>내 신용정보</button>
+      <button class="al-q">${I.megaphone}<span class="rd"></span>공지사항</button>
+      <button class="al-q">${I.headset}<span class="rd"></span>고객센터</button>
+    </div>
+    <div class="al-pop">
+      <div class="hd">인기</div>
+      <div class="al-pop-row"><span class="em">${I.coupon}</span>고유가 피해지원금 신청하기</div>
+      <div class="al-pop-row"><span class="em">${I.ycard}</span>프렌즈 체크카드</div>
+      <div class="al-pop-row"><span class="em">${I.moneybag}</span>신용대출 비교하기 <span class="ev">이벤트</span></div>
+      <div class="dv"></div>
+      <div class="al-pop-row"><span class="em">${I.ball}</span>골 넣고 현금 받아가세요</div>
+    </div>
+    <div class="al-tabs"><span class="on">서비스</span><span>AI</span><span>통장<span class="rd"></span></span><span>저축</span><span data-go="products">카드</span><span>대출</span><span>외환</span><span>서…</span></div>
+    <div class="al-cat">이체·출금</div>
+    <div class="al-svc" data-go="recipient">이체</div>
+    <div class="al-svc" data-go="ai">AI 이체 <span class="beta">Beta</span></div>
+    <div class="al-svc" data-go="recipient">다건이체</div>
+    <div style="height:18px"></div>
+  </div>
+  ${tab2('all')}<div class="homebar"></div></section>`;}
+
+function bfItem(ico,title,sub,badge,opt={}){
+  return `<div class="bf-item">${opt.info?'<span class="info">i</span>':''}
+    <span class="ico ${opt.wht?'wht':''}">${ico}</span>
+    <div class="mid"><div class="t"><span class="tt">${title}</span>${badge?`<span class="bdg ${badge[0]}">${badge[1]}</span>`:''}</div>
+    <div class="s">${sub}</div></div></div>`;
+}
+function scrBenefit(){return `<section class="screen" id="s-benefit">
+  ${sb('11:47')}
+  <div class="bf-top"><h1>혜택</h1>
+    <div class="r"><span class="grp">${I.ccoin} 0원</span><span class="bar"></span><span class="grp">${I.tcoupon} 0개</span></div></div>
+  <div class="body">
+    <div class="bf-notice">${I.speaker} 매달 생활비 돌려받기 이벤트 종료예정 <span class="ar">${I.chevRight}</span></div>
+    <div class="bf-banner"><div class="l"><div class="s1">이번 주 금융 미션 도착!</div>
+      <div class="s2">미션 달성하면 캐시 100% 증정</div></div>${I.wizard}</div>
+    <div class="bf-sec">바로 받아요</div>
+    ${bfItem(I.ball,'매일 골 넣고','현금 받기',['new','신규'])}
+    ${bfItem(I.wcal,'미션 참여하고','현금 받기',['hot','인기'])}
+    ${bfItem('<span style="text-align:center;line-height:1.1"><b style="font-size:10px;color:#E5333C;font-weight:800;display:block">coupang</b><span style="font-size:5.5px;color:#3BB45F;display:block">fulfillment services</span></span>','10초 지원이 가능한  쿠팡 물류센터','간단 지원으로 집 근처 물류 센터에서 …&nbsp;&nbsp;· AD',null,{wht:1,info:1})}
+    ${bfItem(I.wpurple,'광고 보고','랜덤 현금 받기')}
+    ${bfItem(I.shoe,'매일 걷고','현금 받기')}
+    ${bfItem(I.frog,'주변 친구와 함께 켜고','현금 받기',['hot','인기'])}
+    ${bfItem(I.oxbox,'OX 퀴즈 풀고','현금 받기')}
+    ${bfItem(I.survey,'서베이 참여하고','현금 받기')}
+    ${bfItem(I.moneybag,'이번 주 금융 미션 달성하고','현금 받기')}
+    ${bfItem(I.robot,'AI가 생각하는 퀴즈 풀고','현금 받기')}
+    ${bfItem(I.hotel,'특가 숙소 찾아보고','현금 받기')}
+    ${bfItem(I.airplane,'해외여행 둘러보고','현금 받기')}
+    ${bfItem(I.music,'음악 감상하고','현금 받기')}
+    <div class="bf-promos">
+      <div class="bf-promo b1"><span class="adtag">AD</span><div class="s1">연속 출석 필요 없어요</div>
+        <div class="s2">포인트 챙기자 출석<br>매일 최대 5,000P</div></div>
+      <div class="bf-promo b2"><div class="s1">우주급 혜택</div>
+        <div class="s2">금잔치 이벤트<br>최대 100만원</div></div>
+    </div>
+    <div style="height:12px"></div>
+  </div>
+  ${tab2('benefit')}<div class="homebar"></div></section>`;}
+
+function ntItem(o){
+  return `<div class="nt-item ${o.hl?'nt-hl':''}">
+    <span class="nic ${o.err?'err':''}">${o.ic}</span>
+    <div class="bd">
+      <div class="t">${o.t}</div>
+      ${o.d?`<div class="d">${o.d}</div>`:''}
+      <div class="tm">${o.tm}</div>
+      ${o.more?`<button class="more">더 보기 ${I.chevDown}</button>`:''}
+    </div>
+    <span class="ar">${I.chevRight}</span></div>`;
+}
+function scrNotif(){return `<section class="screen" id="s-notif">
+  ${sb('7:15')}
+  <div class="nt-top"><button class="iconbtn" data-back="home">${I.back}</button><h1>알림</h1></div>
+  <div class="body">
+    <div class="nt-sec">오늘</div>
+    ${ntItem({hl:1,ic:I.swap,t:'김범수의 통장(6845)',d:'입금 2,500원 <span class="gray">│</span> 김범수',tm:'18분 전',more:1})}
+    ${ntItem({hl:1,ic:I.swap,t:'🦄유니콘밸리 모임통장(5789)',d:'출금 2,500원 <span class="gray">│</span> 김범수',tm:'18분 전',more:1})}
+    ${ntItem({ic:I.envline,t:'자동이체 출금 예정 안내',d:'내일(6월 13일) 통신요금 55,000원이 김범수의 통장에서 출금될 예정이에요.',tm:'2시간 전'})}
+    <div class="nt-sec" style="margin-top:14px">이번 주</div>
+    ${ntItem({ic:I.group,t:'코딩클럽 3기(1571)',d:'입금 300원 | 모임 체크카드 캐시백',tm:'6월 10일',more:1})}
+    ${ntItem({ic:I.envline,t:'체크카드 캐시백 입금',d:'05월 프렌즈 체크카드(7356) 결제금액에 대한 캐시백 2,207원이 계좌로 입금되었습니다.<br>· 기본 캐시백 2,007원<br>· 프로모션 캐시백 200원',tm:'6월 10일'})}
+    ${ntItem({ic:I.envline,t:'오늘은 회비 내는 날이에요!',d:'🦄유니콘밸리 모임통장에 회비가 얼마나 모였는지 확인해볼까요?',tm:'6월 10일'})}
+    ${ntItem({ic:I.envline,err:1,t:'해외 결제 실패 USD 48',d:'체크카드(7356) | OBSIDIAN&nbsp;&nbsp;&nbsp;&nbsp;OAKVILLE CAN<br>잔액부족',tm:'6월 9일'})}
+    ${ntItem({ic:I.envline,t:'신용리포트가 도착했어요📮',d:'이번 달 신용리포트를 확인해보세요! 내 카드값, 연소득 등을 한눈에 분석해드려요.',tm:'6월 9일'})}
+    ${ntItem({ic:I.group,t:'코딩클럽 3기(1571)',d:'출금 36,000원 | 스터디룸 대여',tm:'6월 8일',more:1})}
+    ${ntItem({ic:I.envline,t:'26주적금 12회차 성공!',d:'이번 주 자동이체 12,000원이 입금됐어요. 절반을 넘었어요, 조금만 더 힘내요!',tm:'6월 8일'})}
+    <div class="nt-sec" style="margin-top:14px">지난 주</div>
+    ${ntItem({hl:0,ic:I.swap,t:'김범수의 통장(6845)',d:'입금 50,000원 <span class="gray">│</span> 급여',tm:'6월 5일',more:1})}
+    ${ntItem({ic:I.envline,t:'세이프박스 이자 입금',d:'세이프박스 이자 1,012원이 입금되었습니다. (연 2.00%, 세후)',tm:'6월 4일'})}
+    ${ntItem({ic:I.envline,t:'한달적금 만기 7일 전',d:'6월 11일에 한달적금이 만기돼요. 만기 후 자동 해지 계좌를 미리 확인해보세요.',tm:'6월 4일'})}
+    ${ntItem({ic:I.envline,t:'출석 이벤트 보상 도착',d:'5월 출석 이벤트 보상 캐시 500원이 지급되었어요. 혜택 탭에서 확인해보세요.',tm:'6월 2일'})}
+    <div style="height:18px"></div>
+  </div>
+  <div class="homebar"></div></section>`;}
+function scrPattern(){return `<section class="screen" id="s-pattern">
+  ${sb('8:17')}
+  <div class="body">
+    <svg class="deer" width="118" height="118" viewBox="0 0 118 118">
+      <ellipse cx="59" cy="74" rx="30" ry="28" fill="#A56A3A"/>
+      <ellipse cx="59" cy="80" rx="20" ry="16" fill="#C68A52"/>
+      <circle cx="49" cy="70" r="4.5" fill="#2B2014"/><circle cx="69" cy="70" r="4.5" fill="#2B2014"/>
+      <ellipse cx="59" cy="86" rx="7" ry="5.5" fill="#5B3A22"/>
+      <path d="M40 50C30 40 28 26 34 22M78 50C88 40 90 26 84 22" stroke="#7A4E2C" stroke-width="6" fill="none" stroke-linecap="round"/>
+      <circle cx="33" cy="20" r="4" fill="#FF5A5F"/><circle cx="85" cy="20" r="4" fill="#4CC38A"/><circle cx="42" cy="30" r="3.5" fill="#FFD43B"/><circle cx="76" cy="30" r="3.5" fill="#5B86E0"/>
+    </svg>
+    <div class="pt-title">다시 한번 그리세요.</div>
+    <div class="pt-sub">4개 이상의 점을 연결해주세요.</div>
+    <div class="pattern" id="pattern">
+      <svg class="lines" id="plines" width="304" height="304" viewBox="0 0 304 304"></svg>
+      <div class="pgrid">${[0,1,2,3,4,5,6,7,8].map(i=>`<div class="pdot" data-p="${i}"><i></i></div>`).join('')}</div>
+    </div>
+    <div class="pt-forgot">혹시 패턴을 잊으셨나요?</div>
+  </div><div class="homebar"></div></section>`;}
+
+/* ============ 마운트 ============ */
+$('#screens').innerHTML = scrPattern()+scrHome()+scrProducts()+scrDetail()+scrMyacc()+scrRecipient()+scrAmount()+scrOb()+scrAi()+scrInvest()+scrAllmenu()+scrBenefit()+scrMemo()+scrAuth2()+scrDone2()+scrNotif();
+
+/* ============ 화면 전환 ============ */
+const screens=['pattern','home','products','detail','myacc','recipient','amount','ob','ai','invest','allmenu','benefit','memo','auth2','done2','notif'];
+function go(n){screens.forEach(s=>$('#s-'+s)&&$('#s-'+s).classList.remove('on'));$('#s-'+n).classList.add('on');}
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),1900);}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-back]');if(b){go(b.dataset.back);return;}
+  const g=e.target.closest('[data-go]');if(g){if(g.dataset.go==='recipient'&&!g.closest('[data-acct]'))curAcct='sang';go(g.dataset.go);}});
+
+/* 첫 화면 = 패턴 */
+go('pattern');
+
+/* ============ 패턴 잠금 ============ */
+(function(){
+  const grid=$('#pattern'),svg=$('#plines');let drawing=false,seq=[];
+  const C=[38,152,266];const ctr=i=>({x:C[i%3],y:C[Math.floor(i/3)]});
+  function draw(){svg.innerHTML=seq.slice(1).map((p,k)=>{const a=ctr(seq[k]),b=ctr(p);
+    return `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="#1B1B1B" stroke-width="6" stroke-linecap="round"/>`;}).join('');}
+  function add(el){const p=+el.dataset.p;if(seq.includes(p))return;seq.push(p);el.classList.add('act');draw();navigator.vibrate&&navigator.vibrate(9);}
+  function hit(e){const t=e.touches?e.touches[0]:e;const el=document.elementFromPoint(t.clientX,t.clientY);const d=el&&el.closest('.pdot');if(d)add(d);}
+  grid.addEventListener('pointerdown',e=>{e.preventDefault();
+    if(e.target.setPointerCapture)try{e.target.releasePointerCapture(e.pointerId);}catch(_){}
+    drawing=true;seq=[];$$('.pdot').forEach(d=>d.classList.remove('act'));svg.innerHTML='';hit(e);});
+  grid.addEventListener('pointermove',e=>{if(drawing){e.preventDefault();hit(e);}});
+  grid.addEventListener('touchmove',e=>{if(drawing)e.preventDefault();},{passive:false});
+  const endPat=()=>{if(!drawing)return;drawing=false;
+    if(seq.length>=4)setTimeout(()=>go('home'),180);else{$$('.pdot').forEach(d=>d.classList.remove('act'));svg.innerHTML='';seq=[];}};
+  window.addEventListener('pointerup',endPat);window.addEventListener('pointercancel',endPat);window.addEventListener('touchend',endPat);
+})();
+
+/* ============ 상세화면 (색 = 탭한 계좌 색) ============ */
+let curTx=[];let curAcct='living';
+function renderTx(){$('#tx-list').innerHTML=curTx.map(t=>`<div class="txrow">
+  <div class="dt">${t.dt}</div><div class="mid"><b>${t.nm}</b><span>${t.memo}</span></div>
+  <div class="rt"><div class="v ${t.plus?'plus':''}">${t.v}</div><div class="bal">${t.bal}</div></div></div>`).join('');}
+function openDetail(key){
+  const a=accounts[key],s=$('#s-detail');
+  s.style.setProperty('--db',a.db);s.style.setProperty('--df',a.df);
+  $('#det-title').textContent=a.name;
+  $('#det-accno').textContent=a.no;
+  $('#det-total').textContent=a.bal.toLocaleString('ko-KR')+'원';
+  $('#det-ppl').innerHTML=a.ppl.map(([bg,g])=>ava(bg,g)).join('');
+  curTx=a.tx;curAcct=key;renderTx();go('detail');
+}
+
+/* ============ 홈/모아보기 인터랙션 ============ */
+$('#go-myacc').addEventListener('click',()=>go('myacc'));
+$('#det-transfer').addEventListener('click',e=>{e.stopPropagation();go('recipient');});
+document.addEventListener('click',e=>{
+  const send=e.target.closest('.t-send');
+  if(send){e.stopPropagation();const host=send.closest('[data-acct]');if(host)curAcct=host.dataset.acct;go('recipient');return;}
+  const card=e.target.closest('[data-acct]');
+  if(card&&!e.target.closest('.more'))openDetail(card.dataset.acct);
+});
+document.addEventListener('click',e=>{const b=e.target.closest('[data-tab2]');if(!b)return;
+  const t=b.dataset.tab2;if(t==='home')go('home');else if(t==='all')go('allmenu');
+  else if(t==='benefit')go('benefit');else if(t==='ai')go('ai');else go('invest');});
+$$('.tabbar button').forEach(b=>b.addEventListener('click',()=>{
+  const t=b.dataset.tab;if(t==='home')go('home');else if(t==='products')go('products');
+  else if(t==='bell')toast('알림');else toast('전체');
+}));
+
+/* ============ 받는사람 → 금액 ============ */
+let payee={name:'김범수',bank:'카카오뱅크',no:'3333-31-7235789'};
+const accLast={sang:'6845',living:'3333',depo:'0421',uni:'9559'};
+function accLabel(k){const a=accounts[k];return `${a.name} (${accLast[k]}) : ${a.bal.toLocaleString('ko-KR')}원`;}
+function syncAccBoxes(){$('#am2-acc-txt').textContent=accLabel(curAcct);$('#mm-acc-txt').textContent=accLabel(curAcct);}
+$$('.rc-row').forEach(r=>r.addEventListener('click',()=>{
+  payee={name:r.dataset.name,bank:r.dataset.bank,no:'3333-31-7235789'};
+  $('#am-name').innerHTML='<span class="nmtxt">'+payee.name+'</span> '+I.chevDown;
+  $('#mm-name').innerHTML='<span class="nmtxt">'+payee.name+'</span> '+I.chevDown;
+  amt='';syncAccBoxes();renderAmt();go('amount');
+}));
+
+/* ============ 금액 키패드 ============ */
+const keys=['1','2','3','4','5','6','7','8','9','00','0','back'];
+$('#am-keypad').innerHTML=keys.map(k=>`<button class="am-key" data-k="${k}">${k==='back'?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6H9l-5 6 5 6h11a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1z"/><line x1="17" y1="10" x2="13" y2="14"/><line x1="13" y1="10" x2="17" y2="14"/></svg>':k}</button>`).join('');
+let amt='';
+function renderAmt(){
+  const d=$('#am-amt'),h=$('#am-hint'),n=$('#am-next');
+  if(!amt){d.classList.add('empty');d.classList.remove('lack');d.textContent='보낼금액';h.textContent='';h.classList.remove('lack');n.classList.remove('on');return;}
+  d.classList.remove('empty');
+  d.innerHTML=(+amt).toLocaleString('ko-KR')+'<span class="cur"></span><span class="wn">원</span>';
+  const lack=(+amt)>accounts[curAcct].bal;
+  d.classList.toggle('lack',lack);
+  h.innerHTML=lack?'출금계좌 잔고 부족 <u>예약이체</u>':'';
+  h.classList.toggle('lack',lack);
+  n.classList.toggle('on',!lack);
+}
+$$('.am-key').forEach(b=>b.addEventListener('click',()=>{const k=b.dataset.k;navigator.vibrate&&navigator.vibrate(7);
+  if(k==='back')amt=amt.slice(0,-1);else if(amt.length<9)amt=(amt+k).replace(/^0+(?=\d)/,'');renderAmt();}));
+/* 퀵 금액 칩 */
+$$('.am2-quick button').forEach(b=>b.addEventListener('click',()=>{
+  const v=b.dataset.add;
+  if(v==='all')amt=String(accounts[curAcct].bal);
+  else amt=String((+amt||0)+(+v));
+  renderAmt();
+}));
+/* 출금계좌 선택 시트 */
+function openAccSheet(){
+  $('#acc-list').innerHTML=['sang','living','depo','uni'].map(k=>{const a=accounts[k];
+    return `<div class="row ${k===curAcct?'sel':''}" data-k="${k}">${ava(a.ava,a.glyph)}
+      <div><b>${a.name} (${accLast[k]})</b><span>${a.bal.toLocaleString('ko-KR')}원</span></div>
+      <span class="ck"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 12 10 18 20 6"/></svg></span></div>`;}).join('');
+  $('#acc-dim').classList.add('on');$('#acc-sheet').classList.add('on');
+}
+document.addEventListener('click',e=>{
+  if(e.target.closest('.am2-acc')){go('amount');openAccSheet();return;}
+  const row=e.target.closest('.accsheet .row');
+  if(row){curAcct=row.dataset.k;syncAccBoxes();renderAmt();$('#acc-dim').classList.remove('on');$('#acc-sheet').classList.remove('on');return;}
+  if(e.target.closest('#acc-dim')){$('#acc-dim').classList.remove('on');$('#acc-sheet').classList.remove('on');}
+});
+/* 다음: 금액 → 표기 화면 */
+$('#am-next').addEventListener('click',()=>{
+  if(!$('#am-next').classList.contains('on'))return;
+  $('#mm-amt').innerHTML=(+amt).toLocaleString('ko-KR')+'<span class="wn">원</span>';
+  $('#mm-to').value=payee.name;$('#mm-me').value='';
+  syncAccBoxes();
+  const aTop=$('#am2-acc').getBoundingClientRect().top;   // 금액 화면 계좌박스 위치
+  go('memo');
+  requestAnimationFrame(()=>{                             // 표기 화면 계좌박스를 같은 y로 보정
+    const mAcc=$('#s-memo .am2-acc'),sp=$('#mm-spacer');
+    const cur=parseFloat(sp.style.height)||152;
+    const diff=mAcc.getBoundingClientRect().top-aTop;     // 양수=현재 더 아래
+    sp.style.height=Math.max(0,cur+diff)+'px';
+  });
+});
+/* 표기 → 확인 바텀시트 */
+$('#mm-next').addEventListener('click',()=>{
+  $('#cf-who').textContent=$('#mm-to').value||payee.name;
+  $('#cf-amt').textContent=(+amt).toLocaleString('ko-KR')+'원';
+  $('#cf-dim').classList.add('on');$('#cf-sheet').classList.add('on');
+});
+$('#cf-cancel').addEventListener('click',()=>{$('#cf-dim').classList.remove('on');$('#cf-sheet').classList.remove('on');});
+$('#cf-dim').addEventListener('click',()=>{$('#cf-dim').classList.remove('on');$('#cf-sheet').classList.remove('on');});
+/* 이체하기 → 인증 */
+$('#cf-ok').addEventListener('click',()=>{
+  $('#cf-dim').classList.remove('on');$('#cf-sheet').classList.remove('on');
+  resetAuth2();go('auth2');
+});
+
+/* ============ 송금 인증 (지문/패턴) ============ */
+function resetAuth2(){
+  $('#au-fp').style.display='flex';$('#au-fp').classList.remove('scanning');
+  $('#au-ok').style.display='none';$('#au-pat').style.display='none';
+  $('#au-switch').style.display='block';$('#au-switch').textContent='패턴으로 인증하기';
+  $('#au-title').textContent='지문으로 인증해 주세요';
+  $('#au-sub').textContent='등록된 지문을 센서에 올려주세요';
+  $$('#au-grid .au-dot').forEach(d=>d.classList.remove('act'));$('#au-lines').innerHTML='';
+}
+function authSuccess(){
+  $('#au-fp').style.display='none';$('#au-pat').style.display='none';$('#au-switch').style.display='none';
+  $('#au-ok').style.display='flex';
+  $('#au-title').textContent='인증 완료';$('#au-sub').textContent='안전하게 이체할게요';
+  navigator.vibrate&&navigator.vibrate(30);
+  setTimeout(finishTransfer,750);
+}
+$('#au-fp').addEventListener('click',()=>{
+  const fp=$('#au-fp');if(fp.classList.contains('scanning'))return;
+  fp.classList.add('scanning');navigator.vibrate&&navigator.vibrate(10);
+  setTimeout(authSuccess,1150);
+});
+$('#au-switch').addEventListener('click',()=>{
+  const pat=$('#au-pat'),fp=$('#au-fp');
+  if(pat.style.display==='none'||!pat.style.display){
+    fp.style.display='none';pat.style.display='block';
+    $('#au-switch').textContent='지문으로 인증하기';
+    $('#au-title').textContent='패턴을 그려주세요';
+    $('#au-sub').textContent='4개 이상의 점을 연결해주세요';
+  }else{
+    pat.style.display='none';fp.style.display='flex';
+    $('#au-switch').textContent='패턴으로 인증하기';
+    $('#au-title').textContent='지문으로 인증해 주세요';
+    $('#au-sub').textContent='등록된 지문을 센서에 올려주세요';
+  }
+});
+/* 미니 패턴 */
+(function(){
+  const grid=$('#au-grid'),svg=$('#au-lines');let drawing=false,seq=[];
+  const C=[29,117,205];const ctr=i=>({x:C[i%3],y:C[Math.floor(i/3)]});
+  function draw(){svg.innerHTML=seq.slice(1).map((p,k)=>{const a=ctr(seq[k]),b=ctr(p);
+    return `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="#2B2E33" stroke-width="5" stroke-linecap="round"/>`;}).join('');}
+  function add(el){const p=+el.dataset.p;if(seq.includes(p))return;seq.push(p);el.classList.add('act');draw();navigator.vibrate&&navigator.vibrate(8);}
+  function hit(e){const t=e.touches?e.touches[0]:e;const el=document.elementFromPoint(t.clientX,t.clientY);const d=el&&el.closest('.au-dot');if(d)add(d);}
+  grid.addEventListener('pointerdown',e=>{e.preventDefault();drawing=true;seq=[];
+    $$('#au-grid .au-dot').forEach(d=>d.classList.remove('act'));svg.innerHTML='';hit(e);});
+  grid.addEventListener('pointermove',e=>{if(drawing){e.preventDefault();hit(e);}});
+  grid.addEventListener('touchmove',e=>{if(drawing)e.preventDefault();},{passive:false});
+  const end=()=>{if(!drawing)return;drawing=false;
+    if(seq.length>=4)authSuccess();
+    else{$$('#au-grid .au-dot').forEach(d=>d.classList.remove('act'));svg.innerHTML='';seq=[];}};
+  window.addEventListener('pointerup',end);window.addEventListener('touchend',end);
+})();
+
+/* ============ 송금 완료 ============ */
+function finishTransfer(){
+  const a=accounts[curAcct],v=+amt;
+  a.bal-=v;
+  a.tx.unshift({dt:'06.12',nm:$('#mm-to').value||payee.name,memo:'#이체',v:'-'+v.toLocaleString('ko-KR')+'원',bal:a.bal.toLocaleString('ko-KR')+'원'});
+  const card=document.querySelector(`.acc2[data-acct="${curAcct}"] .amt`);
+  if(card)card.textContent=a.bal.toLocaleString('ko-KR')+'원';
+  $('#dn-who').textContent=($('#mm-to').value||payee.name);
+  $('#dn-amt').textContent=v.toLocaleString('ko-KR')+'원';
+  go('done2');navigator.vibrate&&navigator.vibrate([20,60,20]);
+}
+$('#dn-ok').addEventListener('click',()=>{amt='';renderAmt();go('home');});
+
+
+/* ============ 카카오뱅크 AI (목데이터) ============ */
+const aiMock=[
+  [/교통/, '이번달 후불교통대금은 47,250원이에요.\n다음달 5일에 김범수의 통장에서 자동 출금될 예정이에요. 🚌'],
+  [/지원금|고유가/, '2차 고유가 피해지원금은 6월 30일까지 정부24에서 신청할 수 있어요.\n대상 여부는 차량 등록 정보로 자동 확인되고, 지급까지 약 2주 걸려요.'],
+  [/점심|4만/, '근로자 점심값 지원은 월 최대 4만 원까지 식대 캐시백 형태로 제공돼요.\n카카오뱅크 체크카드로 평일 11~14시 결제 시 자동 적용돼요. 🍱'],
+  [/10만|후회/, '같은 10만 원이라면 이렇게 나눠보는 건 어때요?\n· 5만 원: 세이프박스 (비상금)\n· 3만 원: 26주적금 도전\n· 2만 원: 나를 위한 소비\n작게 나누면 후회가 줄어요.'],
+  [/연금|1억/, '1억 원을 연 4%로 운용하며 20년간 나눠 받으면 매달 약 60만 원 정도 받을 수 있어요.\n(세전 단순 계산 기준이에요)'],
+  [/이체/, '이수민(4271)님에게 이체를 시작할게요.\n받는 분 정보를 확인했어요 → 이체 화면으로 이동할까요?', 'transfer'],
+];
+function aiReply(q){
+  for(const [re,ans,act] of aiMock){if(re.test(q))return [ans,act];}
+  return ['지금은 데모 버전이라 간단한 질문만 답할 수 있어요.\n아래 추천 질문을 눌러보세요! 😊',null];
+}
+function aiSend(q){
+  if(!q.trim())return;
+  const s=$('#s-ai'),m=$('#ai-msgs');
+  s.classList.add('chatting');
+  m.insertAdjacentHTML('beforeend',`<div class="msg me">${q}</div>`);
+  const [ans,act]=aiReply(q);
+  setTimeout(()=>{
+    m.insertAdjacentHTML('beforeend',`<div class="msg ai"><span class="sp">${I.spark.replace('viewBox','class="sp" viewBox')}</span>${ans}</div>`);
+    $('#ai-body').scrollTop=$('#ai-body').scrollHeight;
+    if(act==='transfer')setTimeout(()=>{curAcct='sang';payee={name:'이수민',bank:'카카오뱅크',no:'3333-42-7142710'};$('#am-name').innerHTML='<span class="nmtxt">이수민</span> '+I.chevDown;$('#mm-name').innerHTML='<span class="nmtxt">이수민</span> '+I.chevDown;amt='';syncAccBoxes();renderAmt();go('amount');},1200);
+  },550);
+  $('#ai-body').scrollTop=$('#ai-body').scrollHeight;
+  $('#ai-input').value='';
+}
+document.addEventListener('click',e=>{
+  const ch=e.target.closest('.ai-chip');if(ch)aiSend(ch.dataset.q);
+});
+$('#ai-send').addEventListener('click',()=>aiSend($('#ai-input').value));
+$('#ai-input').addEventListener('keydown',e=>{if(e.key==='Enter')aiSend(e.target.value);});
+/* ============ 오픈뱅킹 ============ */
+$('#ob-agree').addEventListener('click',()=>{toast('이체가 완료됐어요 ✓');setTimeout(()=>go('home'),800);});
+
+</script>
+</body>
+</html>
