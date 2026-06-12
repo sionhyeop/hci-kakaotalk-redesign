@@ -272,7 +272,7 @@ svg{display:block}
 /* ===== 신형 홈 (실사용 스크린샷 반영) ===== */
 .h2-top{display:flex;align-items:center;padding:10px 22px 6px}
 .h2-top h1{font-size:24px;font-weight:800;letter-spacing:-.3px}
-.h2-top .bell{margin-left:auto;position:relative;color:#2B2E33}
+.h2-top .bell{position:relative;color:#2B2E33}
 .h2-top .bell .ic{width:26px;height:26px}
 .h2-top .bell::after{content:'';position:absolute;top:1px;right:1px;width:7px;height:7px;border-radius:50%;background:var(--red);border:1.5px solid var(--bg)}
 .h2-bubble{margin:6px auto 14px;display:flex;align-items:center;gap:7px;background:#fff;border-radius:26px;
@@ -664,6 +664,21 @@ svg{display:block}
   cursor:pointer;background:#FEE500;color:#3A2929;font-family:inherit;min-height:44px}
 .lk-hint{margin-top:18px;font-size:12.5px;color:#6E7682;text-align:center}
 
+/* ===== SOLUTION: 홈 강화 ===== */
+.smode{margin-left:auto;display:flex;align-items:center;gap:7px;font-size:13px;font-weight:700;color:#6E747B;cursor:pointer}
+.smode .sw{width:40px;height:24px;border-radius:13px;background:#D8DBDF;position:relative;transition:.2s}
+.smode .sw::after{content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.smode.on .sw{background:#16C09A}
+.smode.on .sw::after{left:19px}
+.h2-top .bell{margin-left:12px}
+.fab-send{position:absolute;right:16px;bottom:84px;z-index:25;min-height:58px;border:none;border-radius:20px;
+  background:#FEE500;color:#3A2929;font-size:17px;font-weight:800;font-family:inherit;cursor:pointer;
+  padding:0 24px;display:flex;align-items:center;gap:8px;box-shadow:0 8px 22px rgba(0,0,0,.18);transition:transform .12s}
+.fab-send:active{transform:scale(.96)}
+.fab-send .wc{font-size:19px}
+.acct .amt{cursor:pointer}
+.acct .amt.masked{letter-spacing:1px}
+
 /* ===== SOLUTION ===== */
 .phone-wrap{position:relative}
 .volkeys{position:absolute;left:-8px;top:200px;display:flex;flex-direction:column;gap:10px;z-index:5}
@@ -998,7 +1013,7 @@ function acc2Card(key,extra=''){
 }
 function scrHome(){return `<section class="screen" id="s-home">
   ${sb('11:35')}
-  <div class="h2-top"><h1>김진우</h1><span class="bell" data-go="notif" style="cursor:pointer">${I.bell}</span></div>
+  <div class="h2-top"><h1>김진우</h1><label class="smode" id="smode-sw"><span>간단 모드</span><i class="sw"></i></label><span class="bell" data-go="notif" style="cursor:pointer">${I.bell}</span></div>
   <div class="body">
     <div class="h2-bubble">${I.diamond} 요즘 금값 분위기, 어떨까요?</div>
     <div class="h2-ad">
@@ -1038,6 +1053,7 @@ function scrHome(){return `<section class="screen" id="s-home">
     </div>
     <div style="height:14px"></div>
   </div>
+  <button class="fab-send" id="fab-send"><span class="wc">₩</span> 보내기</button>
   ${tab2('home')}<div class="homebar"></div></section>`;}
 function scrProducts(){return `<section class="screen" id="s-products">
   ${sb('3:22')}
@@ -1607,6 +1623,8 @@ function finishTransfer(){
   if(card)card.textContent=a.bal.toLocaleString('ko-KR')+'원';
   $('#dn-who').textContent=($('#mm-to').value||payee.name);
   $('#dn-amt').textContent=v.toLocaleString('ko-KR')+'원';
+  const ha=document.querySelector(`#s-home .acct[data-acct="${curAcct}"] .amt`);
+  if(ha){ha.dataset.full=a.bal.toLocaleString('ko-KR')+'원';if(!ha.classList.contains('masked'))ha.textContent=ha.dataset.full;}
   go('done2');navigator.vibrate&&navigator.vibrate([20,60,20]);
 }
 $('#dn-ok').addEventListener('click',()=>{amt='';renderAmt();go('home');});
@@ -1728,6 +1746,23 @@ $$('#as-cards .as-card').forEach(c=>c.addEventListener('click',()=>{
   entrySuccess();
 }));
 markAuthDefault();
+
+/* ===== SOLUTION: 홈 잔액 마스킹 + FAB ===== */
+const maskTimers=new Map();
+function setupHomeMask(){
+  $$('#s-home .acct .amt').forEach(a=>{
+    if(!a.dataset.full)a.dataset.full=a.textContent;
+    a.textContent='●●●,●●●원';a.classList.add('masked');
+    a.addEventListener('click',e=>{
+      e.stopPropagation();
+      a.textContent=a.dataset.full;a.classList.remove('masked');
+      clearTimeout(maskTimers.get(a));
+      maskTimers.set(a,setTimeout(()=>{a.textContent='●●●,●●●원';a.classList.add('masked');},5000));
+    });
+  });
+}
+setupHomeMask();
+$('#fab-send').addEventListener('click',()=>{curAcct='sang';go('recipient');});
 
 </script>
 </body>
