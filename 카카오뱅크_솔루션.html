@@ -685,6 +685,31 @@ svg{display:block}
 .burstfx.go{animation:burst .55s ease}
 @keyframes burst{0%{opacity:0;transform:scale(.6)}30%{opacity:1}100%{opacity:0;transform:scale(1.6)}}
 @media (max-width:760px){.volkeys,.demo-panel{display:none}}
+
+/* ===== SOLUTION: 인증 선택 화면 ===== */
+#s-authsel{background:#fff}
+.as-top{padding:6px 10px 0}
+.as-title{padding:18px 26px 0;font-size:25px;font-weight:800;letter-spacing:-.4px}
+.as-sub{padding:10px 26px 0;font-size:15px;color:#8C9298}
+.as-cards{display:flex;flex-direction:column;gap:16px;padding:28px 22px}
+.as-card{position:relative;display:flex;align-items:center;gap:18px;border:1.5px solid #ECEDEF;background:#FAFBFC;
+  border-radius:20px;padding:20px 22px;min-height:84px;font-size:18px;font-weight:800;color:#2B2E33;
+  cursor:pointer;font-family:inherit;transition:.15s}
+.as-card svg{color:#5A6068}
+.as-card:active{transform:scale(.985)}
+.as-card.default{border-color:#FEE500;background:#FFFBE0}
+.as-card .dft{position:absolute;right:18px;font-style:normal;font-size:12px;font-weight:800;color:#B7A400;
+  background:#FEE500;border-radius:8px;padding:3px 9px;display:none}
+.as-card.default .dft{display:block}
+.as-ok{position:absolute;inset:0;background:#fff;display:none;flex-direction:column;align-items:center;
+  justify-content:center;gap:10px;z-index:40}
+.as-ok.on{display:flex}
+.as-okring{width:96px;height:96px;border-radius:50%;background:#16C09A;display:flex;align-items:center;
+  justify-content:center;animation:okpop .45s cubic-bezier(.2,1.4,.4,1)}
+.as-okring svg{width:46px;height:46px;color:#fff}
+@keyframes okpop{0%{transform:scale(.3);opacity:0}100%{transform:scale(1);opacity:1}}
+.as-ok b{font-size:21px;font-weight:800;margin-top:8px}
+.as-ok span{font-size:14.5px;color:#8C9298}
 </style>
 </head>
 <body>
@@ -1359,11 +1384,24 @@ function scrLock(){return `<section class="screen on" id="s-lock">
   <div class="homebar" style="background:#fff;opacity:.85"></div>
 </section>`;}
 
+function scrAuthsel(){return `<section class="screen" id="s-authsel">
+  ${sb('9:41')}
+  <div class="as-top"><button class="iconbtn" data-back="lock">${I.back}</button></div>
+  <h1 class="as-title">어떻게 인증할까요?</h1>
+  <p class="as-sub">한 번 선택하면 기본 방법으로 저장돼요</p>
+  <div class="as-cards" id="as-cards">
+    <button class="as-card" data-auth="finger">${I.finger}<span>지문</span><em class="dft">기본</em></button>
+    <button class="as-card" data-auth="face"><svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><circle cx="9" cy="10" r=".8" fill="currentColor"/><circle cx="15" cy="10" r=".8" fill="currentColor"/><path d="M9 15q3 2.4 6 0"/></svg><span>Face ID</span><em class="dft">기본</em></button>
+    <button class="as-card" data-auth="pattern"><svg viewBox="0 0 24 24" width="44" height="44" fill="currentColor"><circle cx="5" cy="5" r="2.2"/><circle cx="12" cy="5" r="2.2"/><circle cx="19" cy="5" r="2.2"/><circle cx="5" cy="12" r="2.2"/><circle cx="12" cy="12" r="2.2"/><circle cx="19" cy="12" r="2.2"/><circle cx="5" cy="19" r="2.2"/><circle cx="12" cy="19" r="2.2"/><circle cx="19" cy="19" r="2.2"/></svg><span>패턴</span><em class="dft">기본</em></button>
+  </div>
+  <div class="as-ok" id="as-ok"><div class="as-okring">${I.check}</div><b>인증 완료</b><span>안전하게 들어갈게요</span></div>
+</section>`;}
+
 /* ============ 마운트 ============ */
-$('#screens').innerHTML = scrLock()+scrPattern()+scrHome()+scrProducts()+scrDetail()+scrMyacc()+scrRecipient()+scrAmount()+scrOb()+scrAi()+scrInvest()+scrAllmenu()+scrBenefit()+scrMemo()+scrAuth2()+scrDone2()+scrNotif();
+$('#screens').innerHTML = scrLock()+scrAuthsel()+scrPattern()+scrHome()+scrProducts()+scrDetail()+scrMyacc()+scrRecipient()+scrAmount()+scrOb()+scrAi()+scrInvest()+scrAllmenu()+scrBenefit()+scrMemo()+scrAuth2()+scrDone2()+scrNotif();
 
 /* ============ 화면 전환 ============ */
-const screens=['lock','pattern','home','products','detail','myacc','recipient','amount','ob','ai','invest','allmenu','benefit','memo','auth2','done2','notif'];
+const screens=['lock','authsel','pattern','home','products','detail','myacc','recipient','amount','ob','ai','invest','allmenu','benefit','memo','auth2','done2','notif'];
 function go(n){screens.forEach(s=>$('#s-'+s)&&$('#s-'+s).classList.remove('on'));$('#s-'+n).classList.add('on');}
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),1900);}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-back]');
@@ -1392,7 +1430,7 @@ go('lock');
   grid.addEventListener('pointermove',e=>{if(drawing){e.preventDefault();hit(e);}});
   grid.addEventListener('touchmove',e=>{if(drawing)e.preventDefault();},{passive:false});
   const endPat=()=>{if(!drawing)return;drawing=false;
-    if(seq.length>=4)setTimeout(()=>go('home'),180);else{$$('.pdot').forEach(d=>d.classList.remove('act'));svg.innerHTML='';seq=[];}};
+    if(seq.length>=4)setTimeout(()=>{go('authsel');entrySuccess();},180);else{$$('.pdot').forEach(d=>d.classList.remove('act'));svg.innerHTML='';seq=[];}};
   window.addEventListener('pointerup',endPat);window.addEventListener('pointercancel',endPat);window.addEventListener('touchend',endPat);
 })();
 
@@ -1667,6 +1705,25 @@ $('#widget').addEventListener('click',()=>{
   go('authsel');
 });
 wgRender(false);
+
+/* ===== SOLUTION: 인증 선택 (실패 시나리오 없음) ===== */
+function markAuthDefault(){
+  const d=localStorage.getItem('jw-auth');
+  $$('#as-cards .as-card').forEach(c=>c.classList.toggle('default',c.dataset.auth===d));
+}
+function entrySuccess(){
+  const ok=$('#as-ok');ok.classList.add('on');haptic(30);
+  setTimeout(()=>{ok.classList.remove('on');
+    if(pendingGift){pendingGift=false;$('#wg-gift').classList.remove('on');openDetail('sang');}
+    else go('home');
+  },1000);
+}
+$$('#as-cards .as-card').forEach(c=>c.addEventListener('click',()=>{
+  localStorage.setItem('jw-auth',c.dataset.auth);markAuthDefault();
+  if(c.dataset.auth==='pattern'){go('pattern');return;}
+  entrySuccess();
+}));
+markAuthDefault();
 
 </script>
 </body>
