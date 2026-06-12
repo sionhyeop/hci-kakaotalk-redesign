@@ -1638,7 +1638,7 @@ document.addEventListener('pointerdown',e=>{
 
 /* ===== SOLUTION: 잠금화면 위젯 ===== */
 let wgTimer=null,pendingGift=false;
-function wgRecent(){const t=accounts.sang.tx[0];return {nm:t.nm,when:t.dt.replace('06.12','오늘').replace('06.10','오늘')};}
+function wgRecent(){const t=accounts.sang.tx[0];return {nm:t.nm,when:t.dt.replace('06.12','오늘')};}
 function wgRender(unmasked){
   const r=wgRecent();
   if(unmasked){
@@ -1663,7 +1663,6 @@ $('#wg-copy').addEventListener('click',e=>{e.stopPropagation();
   toast('계좌번호가 복사됐어요');haptic(15);
 });
 $('#widget').addEventListener('click',()=>{go('authsel');});
-$('#wg-open').addEventListener('click',e=>{e.stopPropagation();go('authsel');});
 wgRender(false);
 
 </script>
