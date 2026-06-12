@@ -1776,11 +1776,12 @@ $('#au-switch').addEventListener('click',()=>{
 /* ============ 송금 완료 ============ */
 function finishTransfer(){
   const a=accounts[curAcct],v=+amt;
+  const recipName=smode?payee.name:($('#mm-to').value||payee.name);
   a.bal-=v;
-  a.tx.unshift({dt:'06.12',nm:$('#mm-to').value||payee.name,memo:'#이체',v:'-'+v.toLocaleString('ko-KR')+'원',bal:a.bal.toLocaleString('ko-KR')+'원'});
+  a.tx.unshift({dt:'06.12',nm:recipName,memo:'#이체',v:'-'+v.toLocaleString('ko-KR')+'원',bal:a.bal.toLocaleString('ko-KR')+'원'});
   const card=document.querySelector(`.acc2[data-acct="${curAcct}"] .amt`);
   if(card)card.textContent=a.bal.toLocaleString('ko-KR')+'원';
-  $('#dn-who').textContent=($('#mm-to').value||payee.name);
+  $('#dn-who').textContent=recipName;
   $('#dn-amt').textContent=v.toLocaleString('ko-KR')+'원';
   const ha=document.querySelector(`#s-home .acc2[data-acct="${curAcct}"] .amt`);
   if(ha){ha.dataset.full=a.bal.toLocaleString('ko-KR')+'원';if(!ha.classList.contains('masked'))ha.textContent=ha.dataset.full;}
@@ -1848,7 +1849,7 @@ function koAmount(n){
 function maskName(n){return n.length<2?n:n[0]+'●'+n.slice(2);}
 /* 3중 탭 피드백: 시각 링 + 햅틱 (마이크로 모션은 기존 :active 스케일) */
 document.addEventListener('pointerdown',e=>{
-  const t=e.target.closest('button:not(.am-key),[data-go],[data-back],.rc-row,.acct,.acc2,.widget,.sm-btn');
+  const t=e.target.closest('button:not(.am-key),[data-go],[data-back],.rc-row,.acct,.acc2,.widget,.sm-btn,.smode');
   if(!t||t.closest('.demo-panel'))return;
   t.classList.remove('tfx');void t.offsetWidth;t.classList.add('tfx');
   haptic(10);
