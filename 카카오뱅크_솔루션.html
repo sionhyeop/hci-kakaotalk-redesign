@@ -656,6 +656,7 @@ svg{display:block}
   opacity:0;pointer-events:none;z-index:58}
 .burstfx.go{animation:burst .55s ease}
 @keyframes burst{0%{opacity:0;transform:scale(.6)}30%{opacity:1}100%{opacity:0;transform:scale(1.6)}}
+@media (max-width:760px){.volkeys,.demo-panel{display:none}}
 </style>
 </head>
 <body>
@@ -1319,7 +1320,10 @@ function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');cl
 document.addEventListener('click',e=>{const b=e.target.closest('[data-back]');
   if(b){if(b.classList.contains('back-armed'))return;
     b.classList.add('back-armed');
-    setTimeout(()=>{b.classList.remove('back-armed');go(b.dataset.back);},300);return;}
+    const armedOn=document.querySelector('.screen.on')&&document.querySelector('.screen.on').id;
+    setTimeout(()=>{b.classList.remove('back-armed');
+      const cur=document.querySelector('.screen.on');
+      if(cur&&cur.id===armedOn)go(b.dataset.back);},300);return;}
   const g=e.target.closest('[data-go]');if(g){if(g.dataset.go==='recipient'&&!g.closest('[data-acct]'))curAcct='sang';go(g.dataset.go);}});
 
 /* 첫 화면 = 패턴 */
@@ -1569,7 +1573,7 @@ function koAmount(n){
     if(te)s+=(te>1?dig[te]:'')+'십';if(o)s+=dig[o];return s;};
   let out='',rest=n;
   for(const[u,val]of[['조',1e12],['억',1e8],['만',1e4]]){
-    const q=rest/val|0;if(q){out+=small(q)+u;rest%=val;}
+    const q=rest/val|0;if(q){out+=(q===1?'':small(q))+u;rest%=val;}
   }
   if(rest)out+=small(rest);
   return out+' 원';
