@@ -1779,8 +1779,6 @@ function finishTransfer(){
   const recipName=smode?payee.name:($('#mm-to').value||payee.name);
   a.bal-=v;
   a.tx.unshift({dt:'06.12',nm:recipName,memo:'#이체',v:'-'+v.toLocaleString('ko-KR')+'원',bal:a.bal.toLocaleString('ko-KR')+'원'});
-  const card=document.querySelector(`.acc2[data-acct="${curAcct}"] .amt`);
-  if(card)card.textContent=a.bal.toLocaleString('ko-KR')+'원';
   $('#dn-who').textContent=recipName;
   $('#dn-amt').textContent=v.toLocaleString('ko-KR')+'원';
   const ha=document.querySelector(`#s-home .acc2[data-acct="${curAcct}"] .amt`);
