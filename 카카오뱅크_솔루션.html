@@ -1662,7 +1662,10 @@ $('#wg-copy').addEventListener('click',e=>{e.stopPropagation();
   (navigator.clipboard?navigator.clipboard.writeText(acc):Promise.reject()).catch(()=>{});
   toast('계좌번호가 복사됐어요');haptic(15);
 });
-$('#widget').addEventListener('click',()=>{go('authsel');});
+$('#widget').addEventListener('click',()=>{
+  clearTimeout(wgTimer);wgRender(false);$('#wg-ring').classList.remove('run');
+  go('authsel');
+});
 wgRender(false);
 
 </script>
