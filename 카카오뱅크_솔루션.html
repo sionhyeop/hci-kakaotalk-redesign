@@ -1707,19 +1707,23 @@ $('#widget').addEventListener('click',()=>{
 wgRender(false);
 
 /* ===== SOLUTION: 인증 선택 (실패 시나리오 없음) ===== */
+function lsGet(k){try{return localStorage.getItem(k);}catch(_){return null;}}
+function lsSet(k,v){try{localStorage.setItem(k,v);}catch(_){}}
 function markAuthDefault(){
-  const d=localStorage.getItem('jw-auth');
+  const d=lsGet('jw-auth');
   $$('#as-cards .as-card').forEach(c=>c.classList.toggle('default',c.dataset.auth===d));
 }
 function entrySuccess(){
-  const ok=$('#as-ok');ok.classList.add('on');haptic(30);
+  const ok=$('#as-ok');
+  if(ok.classList.contains('on'))return;
+  ok.classList.add('on');haptic(30);
   setTimeout(()=>{ok.classList.remove('on');
     if(pendingGift){pendingGift=false;$('#wg-gift').classList.remove('on');openDetail('sang');}
     else go('home');
   },1000);
 }
 $$('#as-cards .as-card').forEach(c=>c.addEventListener('click',()=>{
-  localStorage.setItem('jw-auth',c.dataset.auth);markAuthDefault();
+  lsSet('jw-auth',c.dataset.auth);markAuthDefault();
   if(c.dataset.auth==='pattern'){go('pattern');return;}
   entrySuccess();
 }));
