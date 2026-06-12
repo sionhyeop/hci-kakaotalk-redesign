@@ -743,8 +743,8 @@ svg{display:block}
 @keyframes keypulse{0%{background:#FFF6BF}100%{background:transparent}}
 .am-key.shake{animation:keyshake .3s ease}
 @keyframes keyshake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}65%{transform:translateX(5px)}}
-.am-amount{font-size:48px}
-.am-ko{text-align:center;margin-top:10px;font-size:18px;font-weight:700;color:#16C09A;min-height:24px}
+.am-amount{font-size:48px;margin-top:40px}
+.am-ko{text-align:center;margin-top:6px;font-size:18px;font-weight:700;color:#16C09A;min-height:24px}
 .am-dup{text-align:center;margin-top:6px;font-size:13.5px;font-weight:700;color:#E8A000;opacity:0;transition:opacity .2s;min-height:18px}
 .am-dup.on{opacity:1}
 </style>
@@ -1734,7 +1734,7 @@ function koAmount(n){
 function maskName(n){return n.length<2?n:n[0]+'●'+n.slice(2);}
 /* 3중 탭 피드백: 시각 링 + 햅틱 (마이크로 모션은 기존 :active 스케일) */
 document.addEventListener('pointerdown',e=>{
-  const t=e.target.closest('button,[data-go],[data-back],.am-key,.rc-row,.acct,.acc2,.widget,.sm-btn');
+  const t=e.target.closest('button:not(.am-key),[data-go],[data-back],.rc-row,.acct,.acc2,.widget,.sm-btn');
   if(!t||t.closest('.demo-panel'))return;
   t.classList.remove('tfx');void t.offsetWidth;t.classList.add('tfx');
   haptic(10);
