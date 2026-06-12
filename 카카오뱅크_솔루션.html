@@ -691,7 +691,7 @@ svg{display:block}
 .lk-hint{margin-top:18px;font-size:12.5px;color:#6E7682;text-align:center}
 
 /* ===== SOLUTION: 홈 강화 ===== */
-.smode{margin-left:auto;display:flex;align-items:center;gap:7px;font-size:13px;font-weight:700;color:#6E747B;cursor:pointer}
+.smode{margin-left:auto;display:flex;align-items:center;gap:7px;font-size:13px;font-weight:700;color:#6E747B;cursor:pointer;padding:14px 0 14px 12px}
 .smode .sw{width:40px;height:24px;border-radius:13px;background:#D8DBDF;position:relative;transition:.2s}
 .smode .sw::after{content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
 .smode.on .sw{background:#16C09A}
@@ -1254,7 +1254,7 @@ function scrMemo(){return `<section class="screen" id="s-memo">
   ${sb('6:56')}
   <div class="am-top"><button class="iconbtn" data-back="amount">${I.back}</button>
     <h1 id="mm-name"><span class="nmtxt">김진우</span> ${I.chevDown}</h1><span class="cancel" data-back="home">취소</span></div>
-  <div class="am-sub">카카오뱅크 3333-31-7235789</div>
+  <div class="am-sub" id="mm-sub">카카오뱅크 3333-31-7235789</div>
   <div class="am-amount" id="mm-amt">2,500<span class="wn">원</span></div>
   <div class="am-hint"></div>
   <div style="margin-top:auto"></div>
@@ -1288,7 +1288,7 @@ function scrDone2(){return `<section class="screen" id="s-done2">
   <div class="body">
     <div class="dn-check">${I.check}</div>
     <div class="dn-msg">김진우님,<br><span id="dn-who">김진우</span>님께 <em id="dn-amt">2,500원</em>을<br><b class="dn-exact">정확히</b> 보냈어요</div>
-    <div class="dn-acc">카카오뱅크 3333-31-7235789 ${I.chevRight}</div>
+    <div class="dn-acc" id="dn-acc">카카오뱅크 3333-31-7235789 ${I.chevRight}</div>
     <div class="dn-card">
       <div class="row"><span>보낸 시각</span><b id="dn-time">—</b></div>
       <div class="row"><span>거래 상태</span><b class="ok">완료 ✓</b></div>
@@ -1634,6 +1634,8 @@ function accLabel(k){const a=accounts[k];return `${a.name} (${accLast[k]}) : ${a
 function syncAccBoxes(){$('#am2-acc-txt').textContent=accLabel(curAcct);$('#mm-acc-txt').textContent=accLabel(curAcct);}
 $$('.rc-row').forEach(r=>r.addEventListener('click',()=>{
   payee={name:r.dataset.name,bank:r.dataset.bank,no:'3333-31-7235789'};
+  $('#am-sub').textContent=payee.bank+' '+payee.no;
+  $('#mm-sub').textContent=payee.bank+' '+payee.no;
   $('#am-name').innerHTML='<span class="nmtxt">'+payee.name+'</span> '+I.chevDown;
   $('#mm-name').innerHTML='<span class="nmtxt">'+payee.name+'</span> '+I.chevDown;
   amt='';syncAccBoxes();renderAmt();go('amount');
@@ -1780,6 +1782,7 @@ function finishTransfer(){
   a.bal-=v;
   a.tx.unshift({dt:'06.12',nm:recipName,memo:'#이체',v:'-'+v.toLocaleString('ko-KR')+'원',bal:a.bal.toLocaleString('ko-KR')+'원'});
   $('#dn-who').textContent=recipName;
+  $('#dn-acc').innerHTML=payee.bank+' '+payee.no+' '+I.chevRight;
   $('#dn-amt').textContent=v.toLocaleString('ko-KR')+'원';
   const ha=document.querySelector(`#s-home .acc2[data-acct="${curAcct}"] .amt`);
   if(ha){ha.dataset.full=a.bal.toLocaleString('ko-KR')+'원';if(!ha.classList.contains('masked'))ha.textContent=ha.dataset.full;}
