@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>1인을 위한 앱 리디자인 — 다한증 사용자를 위한 카카오뱅크</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+  /* ════════ 자체 슬라이드 엔진 (외부 JS 의존 없음) ════════ */
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    width: 100%; height: 100%;
+    background: #fff;
+    overflow: hidden;
+    font-family: 'Pretendard', 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }
+  #stage {
+    position: fixed; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #frame {
+    position: relative;
+    width: 1280px; height: 720px;
+    transform-origin: center center;
+  }
+  .slide {
+    position: absolute; inset: 0;
+    width: 1280px; height: 720px;
+    background: var(--bg);
+    color: var(--body);
+    font-size: 34px;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity .35s ease;
+  }
+  .slide.active { opacity: 1; visibility: visible; }
+
+  /* ── 진행바 / 페이지 번호 / 내비 버튼 ── */
+  #progress {
+    position: fixed; left: 0; bottom: 0; height: 4px;
+    background: var(--accent); width: 0%;
+    transition: width .3s ease; z-index: 50;
+  }
+  #pagenum {
+    position: fixed; right: 18px; bottom: 12px;
+    font-size: 13px; color: var(--gray); z-index: 50;
+    font-variant-numeric: tabular-nums;
+  }
+  .navbtn {
+    position: fixed; bottom: 10px; z-index: 50;
+    width: 34px; height: 34px; border-radius: 50%;
+    border: 1px solid var(--line); background: #fff;
+    color: var(--accent); font-size: 16px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background .15s;
+  }
+  .navbtn:hover { background: var(--accent-soft); }
+  .navbtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  #prev { left: 18px; }
+  #next { left: 60px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .slide { transition: none; }
+    #progress { transition: none; }
+  }
+
+  /* ════════ 콘텐츠 디자인 (기존 토큰 유지) ════════ */
+  /* ════════ Design Tokens — 업로드 장표 스타일 기준 ════════ */
+  :root {
+    --bg:      #ffffff;
+    --ink:     #191f28;   /* 제목 검정 */
+    --body:    #3e4552;   /* 본문 다크그레이 */
+    --gray:    #9aa1ab;   /* 영문 부제 회색 */
+    --faint:   #c2c7cf;
+    --panel:   #f4f5f7;   /* 우측 라이트그레이 패널 */
+    --line:    #e8eaee;
+    --accent:  #fb4b3c;   /* 레드 포인트 */
+    --accent-soft: #fff0ee;
+    --kakao:   #fddc3f;   /* 카카오 옐로 */
+    --shadow:  0 10px 30px rgba(25,31,40,.09);
+  }
+
+  
+  .slide {
+    text-align: left;
+    padding: 52px 72px 44px;
+  }
+  .slide strong { color: var(--ink); font-weight: 700; }
+  .slide .red  { color: var(--accent); font-weight: 700; }
+  .slide ul, .slide ol { margin: 0; padding: 0; list-style: none; }
+
+  /* ── 슬라이드 헤더: 큰 한글 제목 + 회색 영문 부제 ── */
+  .h-title {
+    font-size: 1.55em;
+    font-weight: 800;
+    color: var(--ink);
+    letter-spacing: -0.03em;
+    margin: 0 0 8px;
+    line-height: 1.2;
+  }
+  .h-eng {
+    font-size: .56em;
+    font-weight: 400;
+    color: var(--gray);
+    letter-spacing: -0.01em;
+    margin: 0 0 40px;
+  }
+  .h-sub {
+    font-size: .72em;
+    font-weight: 700;
+    color: var(--ink);
+    margin: 0 0 14px;
+  }
+
+  /* ── 하단 빨간 결론 라인 ── */
+  .conclusion {
+    position: absolute;
+    left: 72px; right: 72px; bottom: 40px;
+    text-align: center;
+    font-size: .62em;
+    font-weight: 700;
+    color: var(--accent);
+  }
+  .conclusion::before { content: "→ "; }
+
+  /* ── 본문 텍스트 ── */
+  .body-txt { font-size: .62em; line-height: 1.75; color: var(--body); margin: 0 0 18px; }
+
+  /* ── 2단 레이아웃 ── */
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: start; }
+  .cols-64 { display: grid; grid-template-columns: 1.5fr 1fr; gap: 56px; align-items: start; }
+
+  /* ── 말풍선 (인터뷰 인용) ── */
+  .bubble {
+    position: relative;
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: var(--shadow);
+    padding: 22px 28px;
+    margin-bottom: 30px;
+  }
+  .bubble::after {
+    content: "";
+    position: absolute;
+    bottom: -14px; left: 36px;
+    border: 8px solid transparent;
+    border-top: 10px solid #fff;
+    filter: drop-shadow(0 6px 4px rgba(25,31,40,.05));
+  }
+  .bubble.tail-r::after { left: auto; right: 36px; }
+  .bubble .ans { font-size: .58em; font-weight: 600; color: var(--ink); line-height: 1.65; margin: 0 0 10px; }
+  .bubble .q   { font-size: .46em; color: var(--gray); margin: 0; }
+
+  /* ── 차트 (사용자 수 비교) ── */
+  .chart { background: var(--panel); border-radius: 14px; padding: 22px 26px; }
+  .chart-head { display:flex; justify-content:space-between; font-size:.42em; color:var(--gray); font-weight:600; margin-bottom:14px; }
+  .crow { display: grid; grid-template-columns: 108px 1fr 86px; align-items: center; gap: 12px; margin-bottom: 9px; }
+  .crow .nm { font-size: .48em; font-weight: 600; color: var(--body); }
+  .crow .delta { font-size: .44em; color: var(--gray); text-align: right; }
+  .bar-wrap { display:flex; flex-direction:column; gap:3px; }
+  .bar { height: 9px; border-radius: 5px; background: #d6dae0; position: relative; }
+  .bar span { position:absolute; right:-4px; top:-3px; transform:translateX(100%); font-size:.4em; color:var(--gray); }
+  .crow.hl { background:#fff; border-radius:10px; padding:8px 10px; margin:2px -10px 11px; box-shadow: var(--shadow); }
+  .crow.hl .nm { color: var(--ink); font-weight: 800; }
+  .crow.hl .nm::before { content:"B "; background:var(--kakao); color:var(--ink); border-radius:5px; padding:1px 5px; font-weight:800; margin-right:6px; }
+  .crow.hl .bar.b1 { background:#ffb4a8; }
+  .crow.hl .bar.b2 { background:var(--accent); }
+  .crow.hl .delta { color: var(--accent); font-weight: 800; }
+
+  /* ── 프로필/정보 테이블 ── */
+  .ptbl { width:100%; border-collapse:collapse; font-size:.54em; }
+  .ptbl th { color:var(--gray); font-weight:600; text-align:left; padding:11px 16px 11px 0; width:25%; border-bottom:1px solid var(--line); vertical-align:top; }
+  .ptbl td { color:var(--body); padding:11px 0; border-bottom:1px solid var(--line); line-height:1.55; }
+  .ptbl tr:last-child th, .ptbl tr:last-child td { border-bottom:none; }
+
+  /* ── 번호 목표 리스트 ── */
+  .goals li { position:relative; padding:7px 0 7px 34px; font-size:.55em; line-height:1.5; counter-increment:g; }
+  .goals { counter-reset:g; }
+  .goals li::before {
+    content: counter(g);
+    position:absolute; left:0; top:8px;
+    width:21px; height:21px; border-radius:50%;
+    background:var(--ink); color:#fff;
+    font-size:.62em; font-weight:700;
+    display:flex; align-items:center; justify-content:center;
+  }
+
+  /* ── Pain Point 감정 카드 ── */
+  .pains { display:grid; grid-template-columns:repeat(3, 1fr); gap:20px; }
+  .pain {
+    background:#fff; border:1px solid var(--line); border-radius:16px;
+    padding:22px 24px; box-shadow:0 4px 16px rgba(25,31,40,.05);
+  }
+  .pain .emo {
+    display:inline-block; font-size:.42em; font-weight:800; letter-spacing:.04em;
+    padding:4px 12px; border-radius:20px; margin-bottom:12px;
+  }
+  .emo.anger   { background:#ffe9e6; color:#e0301e; }
+  .emo.disgust { background:#f3e9f7; color:#8e44ad; }
+  .emo.sadness { background:#e7f1fb; color:#2e7cc4; }
+  .emo.fatigue { background:#fdf2e3; color:#d07c1f; }
+  .emo.fear    { background:#eceff3; color:#4a5568; }
+  .pain h3 { font-size:.6em; font-weight:800; color:var(--ink); margin:0 0 9px; letter-spacing:-0.02em; }
+  .pain p  { font-size:.45em; line-height:1.65; color:var(--body); margin:0 0 12px; }
+  .pain .core { font-size:.42em; color:var(--accent); font-weight:700; margin:0; padding-top:10px; border-top:1px dashed var(--line); }
+
+  /* ── UCT 3단 ── */
+  .uct { display:grid; grid-template-columns:1fr 1.15fr 1fr; gap:28px; }
+  .uct h4 {
+    font-size:.5em; font-weight:800; color:var(--ink); letter-spacing:.1em;
+    margin:0 0 14px; padding-bottom:9px; border-bottom:2.5px solid var(--ink);
+  }
+  .uct ul li { position:relative; padding:6px 0 6px 18px; font-size:.48em; line-height:1.55; }
+  .uct ul li::before { content:"·"; position:absolute; left:2px; color:var(--accent); font-weight:900; }
+  .ctbl { width:100%; border-collapse:collapse; font-size:.44em; }
+  .ctbl th { color:var(--gray); font-weight:600; text-align:left; padding:6px 8px; border-bottom:1.5px solid var(--line); }
+  .ctbl td { padding:7px 8px; border-bottom:1px solid var(--line); color:var(--body); }
+  .tflow { display:flex; flex-direction:column; gap:5px; }
+  .tstep { background:var(--panel); border-radius:8px; padding:7px 13px; font-size:.45em; font-weight:600; color:var(--body); }
+  .tstep.bad { background:var(--accent-soft); color:var(--accent); }
+  .tarr { font-size:.45em; color:var(--faint); padding-left:14px; line-height:.8; }
+
+  /* ── 악순환 다이어그램 ── */
+  .cycle { display:flex; align-items:center; justify-content:center; gap:0; margin:30px 0 26px; flex-wrap:wrap; }
+  .cnode {
+    background:#fff; border:1.5px solid var(--line); border-radius:14px;
+    box-shadow:0 4px 14px rgba(25,31,40,.06);
+    padding:16px 18px; min-width:104px; text-align:center;
+    font-size:.52em; font-weight:700; color:var(--ink); line-height:1.5;
+  }
+  .cnode em { display:block; font-style:normal; font-size:1.3em; margin-bottom:4px; }
+  .cnode.hl { border-color:var(--accent); background:var(--accent-soft); color:var(--accent); }
+  .carr { color:var(--faint); font-size:.7em; padding:0 12px; font-weight:700; }
+  .cback { width:100%; text-align:center; font-size:.5em; color:var(--accent); font-weight:700; margin-top:14px; }
+
+  /* ── 인사이트 박스 ── */
+  .insight {
+    background:var(--panel); border-left:5px solid var(--accent); border-radius:0 16px 16px 0;
+    padding:30px 38px; font-size:.78em; font-weight:700; color:var(--ink); line-height:1.65;
+  }
+  .insight .red { font-weight:800; }
+
+  /* ── 피드백 Before/After ── */
+  .fb { margin-bottom:22px; }
+  .fb .before {
+    background:var(--panel); border-radius:12px; padding:13px 18px;
+    font-size:.52em; color:var(--gray); text-decoration:line-through; margin-bottom:7px;
+  }
+  .fb .after {
+    background:var(--accent-soft); border-radius:12px; padding:13px 18px;
+    font-size:.52em; color:var(--ink); font-weight:600;
+  }
+  .fb .after::before { content:"→ "; color:var(--accent); font-weight:800; }
+
+  /* ── 결정 리스트 ── */
+  .decide li { position:relative; padding:8px 0 8px 26px; font-size:.52em; line-height:1.6; }
+  .decide li::before { content:"✓"; position:absolute; left:0; color:var(--accent); font-weight:900; }
+
+  /* ── 솔루션 오버뷰 카드 ── */
+  .sols { display:grid; grid-template-columns:1fr 1fr; gap:22px; }
+  .solcard {
+    background:#fff; border:1px solid var(--line); border-radius:16px;
+    padding:24px 28px; box-shadow:0 4px 16px rgba(25,31,40,.05);
+  }
+  .solcard .no {
+    display:inline-flex; align-items:center; justify-content:center;
+    width:30px; height:30px; border-radius:9px;
+    background:var(--ink); color:var(--kakao); font-size:.55em; font-weight:800; margin-bottom:12px;
+  }
+  .solcard h3 { font-size:.66em; font-weight:800; color:var(--ink); margin:0 0 8px; letter-spacing:-0.02em; }
+  .solcard p  { font-size:.46em; line-height:1.6; color:var(--body); margin:0 0 12px; }
+  .tags { display:flex; gap:7px; flex-wrap:wrap; }
+  .tg { font-size:.4em; font-weight:700; padding:3px 11px; border-radius:14px; }
+  .tg.down { background:var(--panel); color:var(--gray); }
+  .tg.up   { background:var(--accent-soft); color:var(--accent); }
+
+  /* ── 솔루션 상세 피처 리스트 ── */
+  .feat li {
+    background:var(--panel); border-radius:12px;
+    padding:14px 20px 14px 46px; margin-bottom:11px;
+    font-size:.53em; line-height:1.6; position:relative;
+  }
+  .feat li::before {
+    content:"✓"; position:absolute; left:19px; top:14px;
+    color:var(--accent); font-weight:900;
+  }
+  .sol-no {
+    font-size:.5em; font-weight:800; color:var(--accent);
+    letter-spacing:.12em; margin:0 0 6px;
+  }
+
+  /* ── Affect Map 테이블 ── */
+  .atbl { width:100%; border-collapse:collapse; font-size:.5em; }
+  .atbl th { background:var(--ink); color:#fff; font-weight:700; text-align:left; padding:13px 18px; }
+  .atbl th:first-child { border-radius:12px 0 0 0; }
+  .atbl th:last-child  { border-radius:0 12px 0 0; }
+  .atbl td { padding:13px 18px; border-bottom:1px solid var(--line); vertical-align:top; line-height:1.55; }
+  .atbl td:first-child { font-weight:800; color:var(--ink); }
+  .em-d { color:var(--gray); }
+  .em-u { color:var(--accent); font-weight:700; }
+
+  /* ── 표지 / 결론 ── */
+  .cover { display:flex; flex-direction:column; justify-content:center; height:100%; }
+  .cover .tag {
+    display:inline-block; width:fit-content;
+    background:var(--kakao); color:var(--ink);
+    font-size:.46em; font-weight:800; letter-spacing:.06em;
+    padding:6px 16px; border-radius:20px; margin-bottom:30px;
+  }
+  .cover h1 { font-size:2.4em; font-weight:800; color:var(--ink); letter-spacing:-0.035em; line-height:1.18; margin:0 0 18px; }
+  .cover .sub { font-size:.72em; color:var(--body); margin:0 0 50px; }
+  .cover .meta { font-size:.5em; color:var(--gray); border-top:1px solid var(--line); padding-top:24px; }
+
+  .final { display:flex; flex-direction:column; justify-content:center; align-items:center; height:100%; text-align:center; }
+  .final .big { font-size:1.2em; font-weight:800; color:var(--ink); line-height:1.55; letter-spacing:-0.025em; margin:24px 0 40px; }
+  .final .cta { font-size:.6em; color:var(--gray); }
+  .final .cta strong { color:var(--accent); }
+
+
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="frame">
+<!-- ═══ 01 표지 ═══ -->
+<div class="slide">
+  <div class="cover">
+    <span class="tag">HCI · UX 리디자인 프로젝트</span>
+    <h1>1인을 위한<br>앱 리디자인</h1>
+    <p class="sub">다한증 사용자를 위한 <strong>카카오뱅크</strong> 리디자인</p>
+    <p class="meta">
+      극심한 손 다한증을 가진 24세 대학생 <strong>김진우</strong>, 단 한 명을 위해 설계한 금융 앱
+    </p>
+  </div>
+</div>
+
+<!-- ═══ 02 배경 ═══ -->
+<div class="slide">
+  <h1 class="h-title">배경</h1>
+  <p class="h-eng">Introduction to the existing service · Motivation (why this service is important?)</p>
+  <div class="cols">
+    <div>
+      <p class="h-sub">앱 선정 배경</p>
+      <p class="body-txt">
+        카카오뱅크는 별도 지점 방문 없이 계좌 개설·이체·대출·카드 관리 등 대부분의
+        금융 업무를 모바일에서 처리하게 해 주는 <strong>인터넷전문은행 앱</strong>입니다.
+      </p>
+      <p class="body-txt">
+        기존 시중은행 앱에 비해 프로세스를 단순화하고, 친숙한 디자인과 메시지 중심
+        인터랙션으로 <strong>"쉽고 간편한 은행 경험"</strong>을 제공하며 금융 접근성을 크게 높여 왔습니다.
+      </p>
+      <p class="h-sub" style="margin-top:34px;">중요성</p>
+      <p class="body-txt">
+        하지만 금융 업무 특성상 작은 실수도 금전적 피해로 이어질 수 있기 때문에,
+        "쉽다·편하다"뿐 아니라 <strong>실수 방지·안전성·신뢰감</strong>이 매우 중요한 서비스입니다.
+      </p>
+    </div>
+    <div>
+      <div class="chart">
+        <div class="chart-head"><span>앱 사용자 수 (만 명)</span><span>2024.3 → 2025.3 · 전년 동월 대비</span></div>
+        <div class="crow">
+          <span class="nm">토스</span>
+          <div class="bar-wrap"><div class="bar" style="width:88%"></div><div class="bar" style="width:100%; background:#aeb4bd;"></div></div>
+          <span class="delta">+300만</span>
+        </div>
+        <div class="crow hl">
+          <span class="nm">카카오뱅크</span>
+          <div class="bar-wrap"><div class="bar b1" style="width:70%"></div><div class="bar b2" style="width:77%"></div></div>
+          <span class="delta">+159만</span>
+        </div>
+        <div class="crow">
+          <span class="nm">KB스타뱅킹</span>
+          <div class="bar-wrap"><div class="bar" style="width:50%"></div><div class="bar" style="width:54%; background:#aeb4bd;"></div></div>
+          <span class="delta">+90만</span>
+        </div>
+        <div class="crow">
+          <span class="nm">신한SOL뱅크</span>
+          <div class="bar-wrap"><div class="bar" style="width:33%"></div><div class="bar" style="width:36%; background:#aeb4bd;"></div></div>
+          <span class="delta">+51만</span>
+        </div>
+        <div class="crow">
+          <span class="nm">우리WON뱅킹</span>
+          <div class="bar-wrap"><div class="bar" style="width:31%"></div><div class="bar" style="width:32%; background:#aeb4bd;"></div></div>
+          <span class="delta">+2만</span>
+        </div>
+        <div class="crow">
+          <span class="nm">NH스마트뱅킹</span>
+          <div class="bar-wrap"><div class="bar" style="width:28%"></div><div class="bar" style="width:27%; background:#aeb4bd;"></div></div>
+          <span class="delta">−26만</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="conclusion">따라서 카카오뱅크 앱을 재디자인하면서 사용 편의성과 금융 안전성 간 균형을 다시 설계하는 것을 목표</p>
+</div>
+
+<!-- ═══ 03 타겟 유저 ═══ -->
+<div class="slide">
+  <h1 class="h-title">타겟 유저</h1>
+  <p class="h-eng">Introduction to your target user · Motivation (why choose this user?)</p>
+  <div class="cols-64">
+    <div>
+      <div class="bubble">
+        <p class="ans">하루에 10번 정도는 닦는 것 같고, 카카오뱅크에서 <span class="red">송금을 실수할 때 짜증</span>이 난다.</p>
+        <p class="q">Q1. 하루 평균 스마트폰 화면을 타월이나 옷에 닦는 횟수는 어느 정도입니까?</p>
+      </div>
+      <div class="bubble tail-r">
+        <p class="ans">두 문장에 한 번씩은 틀리는 것 같고, 대체 수단도 터치를 해야 해서 땀을 제대로 닦지 않으면 <span class="red">대부분 오타</span>가 발생한다.</p>
+        <p class="q">Q2. 지문 인식 실패 시, 대체 수단(비밀번호/패턴) 입력 과정의 오타율은 어느 정도입니까?</p>
+      </div>
+      <div class="bubble" style="margin-bottom:0;">
+        <p class="ans">송금이 금액을 설정하다가 틀리는 경우가 있어서 <span class="red">더 번거롭다.</span></p>
+        <p class="q">Q3. '잔액 확인'과 '송금' 중 어느 쪽에서 터치 조작의 번거로움이 더 크게 다가옵니까?</p>
+      </div>
+    </div>
+    <div>
+      <p class="h-sub">발견 과정</p>
+      <p class="body-txt">
+        팀 내에 카카오뱅크를 쓰는 팀원들을 조사하던 도중 공통적으로
+        <strong>"다한증"</strong>을 가진 유저들을 발견했습니다.
+      </p>
+      <p class="body-txt">
+        팀원들을 대상으로 질문지를 작성한 뒤 <strong>인터뷰를 진행</strong>하고,
+        공통적인 이슈를 파악했습니다.
+      </p>
+      <p class="body-txt" style="margin-top:26px;">
+        인터뷰 결과, 문제는 단순 오타가 아니라<br>
+        <span class="red">"송금처럼 실수 비용이 큰 작업"</span>에서<br>
+        반복되는 불안과 재확인이었습니다.
+      </p>
+    </div>
+  </div>
+  <p class="conclusion">터치 정확도가 낮을수록 실수 비용이 큰 금융 앱에서 불안이 증폭된다 — 다한증 사용자를 타겟으로 선정</p>
+</div>
+
+<!-- ═══ 04 페르소나 ═══ -->
+<div class="slide">
+  <h1 class="h-title">페르소나</h1>
+  <p class="h-eng">Persona — one specific user we design for</p>
+  <div class="cols">
+    <div>
+      <p class="h-sub" style="font-size:.92em;">김진우 <span style="font-weight:400; color:var(--gray); font-size:.7em;">24세 · 컴퓨터공학과 · 모바일 금융 고빈도 사용자</span></p>
+      <table class="ptbl">
+        <tr><th>신체 특성</th><td>극심한 손 다한증 → 터치 정확도 저하, 지문 인식 실패 빈번</td></tr>
+        <tr><th>성향</th><td>걱정이 많고 작은 실수에 민감. 빠르게 처리하고 싶지만 실수가 두려워 멈칫함</td></tr>
+        <tr><th>습관</th><td>확신이 들 때까지 반복 확인 (송금 후 거래내역 재확인, 입력값 재확인)</td></tr>
+        <tr><th>핵심 감정</th><td><span class="red">불안</span> · <strong>긴장</strong> · <strong>피로</strong></td></tr>
+        <tr><th>주 사용 앱</th><td>카카오뱅크</td></tr>
+      </table>
+    </div>
+    <div>
+      <p class="h-sub">사용자 목표</p>
+      <ul class="goals">
+        <li>빠르고 안전하게 금융 작업 수행</li>
+        <li>실수 없이 송금 완료</li>
+        <li>송금 후 <span class="red">바로 안심</span>할 수 있기</li>
+        <li>최소한의 터치로 정확하게 조작</li>
+        <li>반복 재확인에 드는 시간 최소화</li>
+      </ul>
+    </div>
+  </div>
+  <p class="conclusion">진우의 목표는 "빠름"과 "안심"의 동시 달성 — 둘 중 하나만 만족하는 디자인은 실패</p>
+</div>
+
+<!-- ═══ 05 Pain Point ①~③ ═══ -->
+<div class="slide">
+  <h1 class="h-title">진우의 일상 — Pain Point</h1>
+  <p class="h-eng">Scenario-based pain points (1/2) — what actually goes wrong</p>
+  <div class="pains">
+    <div class="pain">
+      <span class="emo anger">ANGER · 중복 입력</span>
+      <h3>중복 입력으로<br>화가 난 진우</h3>
+      <p>땀 때문에 숫자가 중복 입력되어 <strong>5만 원이 50만 원</strong>이 된다. 지우는 과정에서도 백스페이스가 두 번 눌린다. 더치페이 자리에서 혼자 입력을 반복하며 민망함과 위축감을 느낀다.</p>
+      <p class="core">핵심 문제 — 연속 터치 오입력 + 수정 중 추가 오입력</p>
+    </div>
+    <div class="pain">
+      <span class="emo disgust">DISGUST · 오터치</span>
+      <h3>오른손잡이<br>진우</h3>
+      <p>오른손 엄지 한 손 조작이 기본인데, 엄지 손바닥의 땀으로 화면 하단 <strong>뒤로가기 버튼이 오터치</strong>되어 처음부터 다시 하는 일이 잦다. 폰을 집어던지고 싶은 혐오감마저 느낀다.</p>
+      <p class="core">핵심 문제 — 하단 버튼 배치가 의도치 않은 접촉 유발</p>
+    </div>
+    <div class="pain">
+      <span class="emo sadness">SADNESS · 인증 실패</span>
+      <h3>지문 인식이<br>안 되는 진우</h3>
+      <p>남들 다 하는 지문 인식을 <strong>땀 때문에 반복 실패</strong>한다. 공강 시간에 계좌이체를 하다 인증에 시간을 다 쓰고 강의에 늦은 적도 있다.</p>
+      <p class="core">핵심 문제 — 단일 인증 의존 → 실패 시 대안 없음</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 06 Pain Point ④~⑤ ═══ -->
+<div class="slide">
+  <h1 class="h-title">진우의 일상 — Pain Point</h1>
+  <p class="h-eng">Scenario-based pain points (2/2) — fatigue and distrust accumulate</p>
+  <div class="pains" style="grid-template-columns:1fr 1fr;">
+    <div class="pain">
+      <span class="emo fatigue">FATIGUE · 절차 과다</span>
+      <h3>강박이 있는 진우</h3>
+      <p>잔액·최근 거래만 확인하면 되는데, <strong>앱 진입 과정 자체가 다한증 때문에 지연</strong>된다. "이 간단한 행동조차 절차를 최소화할 수 있다면 기쁠 것 같다"고 생각한다.</p>
+      <p class="core">핵심 문제 — 단순 조회에도 전체 인증 절차 → 반복 피로 누적</p>
+    </div>
+    <div class="pain">
+      <span class="emo fear">FEAR · 확신 부족</span>
+      <h3>본인을 믿을 수 없는 진우</h3>
+      <p>반복된 실패 끝에 <strong>송금 후에도 제대로 갔는지 확인하는 버릇</strong>이 생겼다. 보냈다고 생각했는데 안 보내진 적도 있고, 문제가 생기면 "알림이 안 왔다"며 앱을 탓하기도 한다.</p>
+      <p class="core">핵심 문제 — 조작 성공에 대한 지속적 불신 → 습관적 재확인</p>
+    </div>
+  </div>
+  <p class="conclusion">다섯 장면의 공통분모는 "터치 실패" 그 자체가 아니라, 실패가 남기는 "확신의 붕괴"</p>
+</div>
+
+<!-- ═══ 07 UCT 분석 ═══ -->
+<div class="slide">
+  <h1 class="h-title">User · Context · Task 분석</h1>
+  <p class="h-eng">Structuring the problem — who, where, and in what flow it breaks</p>
+  <div class="uct">
+    <div>
+      <h4>USER</h4>
+      <ul>
+        <li>손 다한증 → 터치 정확도 저하</li>
+        <li>금융 실수에 극히 민감</li>
+        <li>조작 성공 여부 반복 확인</li>
+        <li><strong>긴장할수록 손 땀 심화</strong></li>
+        <li>빠른 사용 + 안정성 동시 요구</li>
+      </ul>
+    </div>
+    <div>
+      <h4>CONTEXT</h4>
+      <table class="ctbl">
+        <tr><th>환경</th><th>영향</th></tr>
+        <tr><td>대중교통 · 이동 중</td><td>손 땀 증가 → 터치 오류</td></tr>
+        <tr><td>더운 실내 · 여름</td><td>닦아도 인식 실패</td></tr>
+        <tr><td>한 손(엄지) 조작</td><td>하단 가장자리 오터치</td></tr>
+        <tr><td>급한 송금</td><td>긴장 → 실수 가능성↑</td></tr>
+        <tr><td>공공장소</td><td>노출 불안 · 재확인↑</td></tr>
+      </table>
+    </div>
+    <div>
+      <h4>TASK FLOW</h4>
+      <div class="tflow">
+        <div class="tstep">앱 실행</div>
+        <div class="tarr">↓</div>
+        <div class="tstep bad">인증 시도 — 성공 여부 불안</div>
+        <div class="tarr">↓</div>
+        <div class="tstep">송금 정보 입력</div>
+        <div class="tarr">↓</div>
+        <div class="tstep bad">반복 확인 — 불안</div>
+        <div class="tarr">↓</div>
+        <div class="tstep">송금 완료</div>
+        <div class="tarr">↓</div>
+        <div class="tstep bad">거래내역 재확인</div>
+      </div>
+    </div>
+  </div>
+  <p class="conclusion">모든 단계에 "확신 부족"이 끼어들어 흐름을 끊는다</p>
+</div>
+
+<!-- ═══ 08 핵심 인사이트 ═══ -->
+<div class="slide">
+  <h1 class="h-title">핵심 인사이트</h1>
+  <p class="h-eng">Key insight — the real problem behind touch failures</p>
+  <div class="cycle">
+    <div class="cnode"><em>😰</em>불안</div>
+    <div class="carr">→</div>
+    <div class="cnode"><em>🔄</em>반복 확인</div>
+    <div class="carr">→</div>
+    <div class="cnode"><em>😤</em>긴장</div>
+    <div class="carr">→</div>
+    <div class="cnode"><em>💦</em>땀 증가</div>
+    <div class="carr">→</div>
+    <div class="cnode hl"><em>❌</em>또 실패</div>
+    <div class="cback">↩ 불확신이 불안을 낳고, 불안이 다시 실패를 낳는 악순환</div>
+  </div>
+  <div class="insight">
+    다한증 사용자는 단순히 터치가 어려운 것이 아니라,<br>
+    <span class="red">"내가 제대로 조작했는지 확신하지 못하는 불안"</span>을 반복적으로 경험한다.
+  </div>
+  <p class="conclusion">끊어야 할 것은 터치 오류가 아니라, 이 악순환의 고리</p>
+</div>
+
+<!-- ═══ 09 디자인 컨셉 ═══ -->
+<div class="slide">
+  <h1 class="h-title">디자인 컨셉</h1>
+  <p class="h-eng">Design concept — derived directly from the insight</p>
+  <div style="margin:46px 0 50px;">
+    <p style="font-size:.56em; color:var(--gray); margin:0 0 16px;">우리가 설계하는 것</p>
+    <p style="font-size:1.3em; font-weight:800; color:var(--ink); line-height:1.5; letter-spacing:-0.03em; margin:0;">
+      "빠른 송금"이 아니라<br>
+      <span class="red">"제대로 보냈다는 확신"</span>을 디자인한다.
+    </p>
+  </div>
+  <div class="cols">
+    <div class="bubble" style="margin:0;">
+      <p class="ans" style="margin-bottom:6px;">핵심 Affect</p>
+      <p class="q" style="font-size:.52em; color:var(--body); font-weight:600;">"제대로 보냈나?" · "제대로 보낼 수 있을까?"</p>
+    </div>
+    <div class="bubble tail-r" style="margin:0;">
+      <p class="ans" style="margin-bottom:6px;">디자인 목표</p>
+      <p class="q" style="font-size:.52em; color:var(--body); font-weight:600;">다한증 사용자의 불안감을 줄이고, 조작에 대한 확신을 높인다</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 10 방향 수정 ═══ -->
+<div class="slide">
+  <h1 class="h-title">피드백 반영 — 방향 수정</h1>
+  <p class="h-eng">Refining the direction — professor feedback &amp; team decisions</p>
+  <div class="cols">
+    <div>
+      <p class="h-sub">교수님 피드백</p>
+      <div class="fb">
+        <div class="before">너무 솔루션에 맞춰져 있다</div>
+        <div class="after">페르소나(불안·확신)에 초점을 다시 맞춤</div>
+      </div>
+      <div class="fb">
+        <div class="before">실패 과정을 굳이 흐름에 넣을 필요가 있나</div>
+        <div class="after">실패 시나리오 제거 — 처음부터 성공 경험 우선</div>
+      </div>
+      <div class="fb" style="margin-bottom:0;">
+        <div class="before">문제 상황이 겹친다</div>
+        <div class="after">"실수 터치 불안" 항목 삭제 (땀 터치 오류와 중복)</div>
+      </div>
+    </div>
+    <div>
+      <p class="h-sub">팀 내부 확정 결정</p>
+      <ul class="decide">
+        <li><strong>롱프레스 전면 제거</strong> — 누르기 유지 자체가 어려움 → <span class="red">슬라이드 확인 방식</span>으로 대체 (게이지 + 햅틱)</li>
+        <li><strong>자동 보호모드 제거</strong> — 시스템의 갑작스러운 개입은 새로운 불안 유발 → 사용자가 직접 켜는 <span class="red">선택형 "간단 모드"</span></li>
+        <li><strong>인증은 선택형</strong> — 첫 설정에서 지문 / Face ID / 패턴 중 자주 성공하는 수단을 기본값으로</li>
+        <li><strong>위젯 잔액 보기</strong> — 롱프레스 대신 터치 1회 마스킹 토글</li>
+      </ul>
+    </div>
+  </div>
+  <p class="conclusion">"시스템이 도와주는 척 개입"하지 않고, 사용자가 통제권을 갖는 방향으로 정리</p>
+</div>
+
+<!-- ═══ 11 솔루션 오버뷰 ═══ -->
+<div class="slide">
+  <h1 class="h-title">최종 솔루션 4가지</h1>
+  <p class="h-eng">Four solutions — each targets one emotion, all converge on "certainty"</p>
+  <div class="sols">
+    <div class="solcard">
+      <span class="no">1</span>
+      <h3>터치 안정성 UI</h3>
+      <p>버튼 간격·크기 강화, 엄지 도달 영역 배치, 중복 입력 방지</p>
+      <div class="tags"><span class="tg down">Anger ↓</span><span class="tg up">Trust ↑</span><span class="tg up">Simple</span></div>
+    </div>
+    <div class="solcard">
+      <span class="no">2</span>
+      <h3>조작 성공 피드백 강화</h3>
+      <p>입력마다 햅틱+시각 피드백, 슬라이드 투 센드, 완료 정보 강조</p>
+      <div class="tags"><span class="tg down">Fear ↓</span><span class="tg up">Trust ↑</span><span class="tg up">Calm</span></div>
+    </div>
+    <div class="solcard">
+      <span class="no">3</span>
+      <h3>선택형 간단 모드</h3>
+      <p>핵심 기능만 남긴 큰 버튼 인터페이스, 사용자가 직접 토글</p>
+      <div class="tags"><span class="tg down">Disgust ↓</span><span class="tg up">Joy</span><span class="tg up">Simple</span></div>
+    </div>
+    <div class="solcard">
+      <span class="no">4</span>
+      <h3>홈 위젯 + 마스킹</h3>
+      <p>앱 진입 없이 잔액·거래 확인, 터치 1회 언마스킹 후 자동 재마스킹</p>
+      <div class="tags"><span class="tg up">Anticipation</span><span class="tg up">Trust</span><span class="tg up">Optimistic</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 12 Solution 1 ═══ -->
+<div class="slide">
+  <p class="sol-no">SOLUTION 1 / 4</p>
+  <h1 class="h-title">터치 안정성 UI</h1>
+  <p class="h-eng">Anger ↓ · Trust ↑ — input that lands exactly as intended</p>
+  <ul class="feat">
+    <li>버튼 최소 <strong>56px</strong>, 간격 최소 <strong>16px</strong> — 인접 오터치 방지</li>
+    <li>주요 액션 버튼을 <strong>오른쪽 가장자리(엄지 도달 영역)</strong>에 배치 — 터치 성공률이 높은 영역 활용</li>
+    <li>오터치 가능성이 높은 영역(뒤로가기 등)은 최소화하고 상단으로 이동</li>
+    <li>숫자 키패드 <strong>중복 입력 방지</strong> — 동일 키 연속 입력 디바운스 + "한 번만 입력됐어요" 피드백</li>
+    <li>금액 입력 시 <strong>한글 보조 표기</strong>("오십만 원") — 50,000 vs 500,000 오인 방지</li>
+  </ul>
+</div>
+
+<!-- ═══ 13 Solution 2 ═══ -->
+<div class="slide">
+  <p class="sol-no">SOLUTION 2 / 4</p>
+  <h1 class="h-title">조작 성공 피드백 강화</h1>
+  <p class="h-eng">Fear ↓ · Trust ↑ · Calm — every action answers back "done"</p>
+  <ul class="feat">
+    <li>키 입력마다 <strong>즉각적인 햅틱 + 시각 피드백</strong> — "눌렸다"는 확신을 매 터치마다 제공</li>
+    <li>송금 확정은 <strong>슬라이드 투 센드</strong> — 게이지 차오름 애니메이션 + 완료 시 강한 진동</li>
+    <li>완료 화면에서 <strong>거래 정보(받는 사람·금액·시간) 강조</strong> — 재확인 욕구를 화면 안에서 해소</li>
+    <li>입금 수신 시 위젯에 <strong>선물상자 표시</strong> 등 명확한 수신 피드백</li>
+  </ul>
+</div>
+
+<!-- ═══ 14 Solution 3 ═══ -->
+<div class="slide">
+  <p class="sol-no">SOLUTION 3 / 4</p>
+  <h1 class="h-title">선택형 간단 모드</h1>
+  <p class="h-eng">Disgust ↓ · Joy · Simple — fewer targets, bigger targets, user's choice</p>
+  <ul class="feat">
+    <li>핵심 기능(송금·잔액·거래내역)만 남긴 <strong>큰 버튼 중심 인터페이스</strong></li>
+    <li>자동 개입 없이 <strong>사용자가 토글로 직접 선택</strong> — 시스템의 갑작스러운 개입은 새로운 불안이 됨</li>
+    <li>일반 모드 ↔ 간단 모드 <strong>전환 자유</strong> — 다른 기능이 필요할 때의 트레이드오프 해소</li>
+    <li>거래내역 넘기기 등 단순 재확인 동작에 <strong>물리 버튼(볼륨키) 활용</strong> — 터치 없는 조작 경로 확보</li>
+    <li>명칭은 <span class="red">"간단 모드"</span> — '보호 모드'는 낙인 우려로 배제</li>
+  </ul>
+</div>
+
+<!-- ═══ 15 Solution 4 ═══ -->
+<div class="slide">
+  <p class="sol-no">SOLUTION 4 / 4</p>
+  <h1 class="h-title">홈 위젯 + 마스킹</h1>
+  <p class="h-eng">Anticipation · Trust · Optimistic — reassurance without entering the app</p>
+  <ul class="feat">
+    <li>앱 진입 없이 <strong>잔액 · 최근 거래 상대 · 거래 시간</strong> 바로 확인</li>
+    <li>기본 마스킹 처리 — 공공장소에서의 개인정보 노출 부담 해소</li>
+    <li><strong>터치 1회 → 짧게 표시 → 자동 재마스킹</strong> — 롱프레스 없는 안전한 확인</li>
+    <li>마스킹 해제 상태에서 바로 <strong>계좌번호 복사</strong></li>
+    <li>반복 재확인 피로 ↓ — <strong>"앱에 다시 안 들어가도 된다"</strong>는 편안함 제공</li>
+  </ul>
+</div>
+
+<!-- ═══ 16 Affect Map ═══ -->
+<div class="slide">
+  <h1 class="h-title">기능 개선 시 진우의 감정 변화</h1>
+  <p class="h-eng">Affect map — which emotion each solution removes and creates</p>
+  <table class="atbl">
+    <thead>
+      <tr><th style="width:24%">솔루션</th><th style="width:36%">감소하는 감정</th><th>회복 · 생성되는 감정</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>1. 터치 안정성 UI</td>
+        <td><span class="em-d">Anger</span> — 중복 입력·오터치 분노</td>
+        <td><span class="em-u">Trust</span> 의도대로 입력된다는 신뢰 · <span class="em-u">Simple</span></td>
+      </tr>
+      <tr>
+        <td>2. 성공 피드백 강화</td>
+        <td><span class="em-d">Fear</span> — "제대로 보냈나" 불안</td>
+        <td><span class="em-u">Trust</span> 조작 확신 · <span class="em-u">Calm</span> 완료 후 안정감</td>
+      </tr>
+      <tr>
+        <td>3. 간단 모드</td>
+        <td><span class="em-d">Disgust</span> — 오터치 혐오·피로</td>
+        <td><span class="em-u">Joy</span> 편안한 수행의 만족감 · <span class="em-u">Simple</span></td>
+      </tr>
+      <tr>
+        <td>4. 위젯 + 마스킹</td>
+        <td><span class="em-d">재확인 피로 · 노출 불안</span></td>
+        <td><span class="em-u">Anticipation</span> · <span class="em-u">Trust</span> · <span class="em-u">Optimistic</span></td>
+      </tr>
+    </tbody>
+  </table>
+  <p class="conclusion">네 가지 솔루션은 하나의 목표로 수렴한다 — 조작의 매 순간 "됐다"는 확신을 즉시 돌려준다</p>
+</div>
+
+<!-- ═══ 17 결론 ═══ -->
+<div class="slide">
+  <div class="final">
+    <span class="tag" style="background:var(--kakao); color:var(--ink); font-size:.46em; font-weight:800; padding:6px 16px; border-radius:20px;">결론</span>
+    <p class="big">
+      조작의 매 순간마다 <span class="red">"됐다"는 확신</span>을 즉시 돌려주어<br>
+      불안 → 땀 → 실패의 악순환을 끊는다.
+    </p>
+    <p class="cta">이제 프로토타입으로 직접 확인하세요 — <strong>김진우를 위한 카카오뱅크, 라이브 시연</strong></p>
+  </div>
+</div>
+
+
+  </div>
+</div>
+<div id="progress"></div>
+<div id="pagenum"></div>
+<button id="prev" class="navbtn" aria-label="이전 슬라이드">‹</button>
+<button id="next" class="navbtn" aria-label="다음 슬라이드">›</button>
+
+<script>
+(function () {
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var total = slides.length;
+  var cur = 0;
+
+  // 해시(#3)로 시작 슬라이드 복원
+  var h = parseInt(location.hash.replace('#', ''), 10);
+  if (!isNaN(h) && h >= 1 && h <= total) cur = h - 1;
+
+  var progress = document.getElementById('progress');
+  var pagenum = document.getElementById('pagenum');
+
+  function show(i) {
+    cur = Math.max(0, Math.min(total - 1, i));
+    slides.forEach(function (s, idx) {
+      s.classList.toggle('active', idx === cur);
+    });
+    progress.style.width = ((cur + 1) / total * 100) + '%';
+    pagenum.textContent = (cur + 1) + ' / ' + total;
+    try { history.replaceState(null, '', '#' + (cur + 1)); } catch (e) {}
+  }
+  function next() { show(cur + 1); }
+  function prev() { show(cur - 1); }
+
+  // 키보드: ←→ ↑↓ Space PgUp/Dn Home/End, F = 전체화면
+  document.addEventListener('keydown', function (e) {
+    switch (e.key) {
+      case 'ArrowRight': case 'ArrowDown': case 'PageDown': case ' ':
+        e.preventDefault(); next(); break;
+      case 'ArrowLeft': case 'ArrowUp': case 'PageUp':
+        e.preventDefault(); prev(); break;
+      case 'Home': e.preventDefault(); show(0); break;
+      case 'End':  e.preventDefault(); show(total - 1); break;
+      case 'f': case 'F':
+        if (document.fullscreenElement) { document.exitFullscreen(); }
+        else if (document.documentElement.requestFullscreen) { document.documentElement.requestFullscreen(); }
+        break;
+    }
+  });
+
+  document.getElementById('next').addEventListener('click', next);
+  document.getElementById('prev').addEventListener('click', prev);
+
+  // 화면 좌/우 클릭으로 이동 (버튼·링크 클릭은 제외)
+  document.getElementById('stage').addEventListener('click', function (e) {
+    if (e.target.closest('.navbtn') || e.target.closest('a') || e.target.closest('button')) return;
+    var x = e.clientX / window.innerWidth;
+    if (x < 0.25) prev(); else next();
+  });
+
+  // 터치 스와이프
+  var tx = null;
+  document.addEventListener('touchstart', function (e) { tx = e.touches[0].clientX; }, { passive: true });
+  document.addEventListener('touchend', function (e) {
+    if (tx === null) return;
+    var dx = e.changedTouches[0].clientX - tx;
+    if (Math.abs(dx) > 50) { if (dx < 0) next(); else prev(); }
+    tx = null;
+  }, { passive: true });
+
+  // 1280×720 프레임을 창 크기에 맞춰 스케일
+  var frame = document.getElementById('frame');
+  function fit() {
+    var s = Math.min(window.innerWidth / 1280, window.innerHeight / 720) * 0.97;
+    frame.style.transform = 'scale(' + s + ')';
+  }
+  window.addEventListener('resize', fit);
+
+  fit();
+  show(cur);
+})();
+</script>
+</body>
+</html>
