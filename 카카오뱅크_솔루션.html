@@ -734,6 +734,19 @@ svg{display:block}
 @keyframes okpop{0%{transform:scale(.3);opacity:0}100%{transform:scale(1);opacity:1}}
 .as-ok b{font-size:21px;font-weight:800;margin-top:8px}
 .as-ok span{font-size:14.5px;color:#8C9298}
+
+/* ===== SOLUTION: 키패드 64px + 중복 방지 + 한글 보조표기 ===== */
+#am-keypad{gap:12px;padding:8px 16px 0}
+#am-keypad .am-key{height:64px;border-radius:16px}
+#am-keypad .am-key:active{background:#F2F3F5}
+.am-key.pulse{animation:keypulse .25s ease}
+@keyframes keypulse{0%{background:#FFF6BF}100%{background:transparent}}
+.am-key.shake{animation:keyshake .3s ease}
+@keyframes keyshake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}65%{transform:translateX(5px)}}
+.am-amount{font-size:48px}
+.am-ko{text-align:center;margin-top:10px;font-size:18px;font-weight:700;color:#16C09A;min-height:24px}
+.am-dup{text-align:center;margin-top:6px;font-size:13.5px;font-weight:700;color:#E8A000;opacity:0;transition:opacity .2s;min-height:18px}
+.am-dup.on{opacity:1}
 </style>
 </head>
 <body>
@@ -1138,6 +1151,8 @@ function scrAmount(){return `<section class="screen" id="s-amount">
   <div class="am-sub" id="am-sub">카카오뱅크 3333-31-7235789</div>
   <div class="am-amount empty" id="am-amt">보낼금액</div>
   <div class="am-hint" id="am-hint"></div>
+  <div class="am-ko" id="am-ko"></div>
+  <div class="am-dup" id="am-dup">한 번만 입력됐어요</div>
   <div style="margin-top:auto"></div>
   <div class="am2-acc" id="am2-acc"><span class="txt" id="am2-acc-txt">김진우의 통장 (6845) : 117,840원</span>${I.chevDown}</div>
   <div class="am2-quick">
@@ -1517,18 +1532,33 @@ const keys=['1','2','3','4','5','6','7','8','9','00','0','back'];
 $('#am-keypad').innerHTML=keys.map(k=>`<button class="am-key" data-k="${k}">${k==='back'?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6H9l-5 6 5 6h11a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1z"/><line x1="17" y1="10" x2="13" y2="14"/><line x1="13" y1="10" x2="17" y2="14"/></svg>':k}</button>`).join('');
 let amt='';
 function renderAmt(){
-  const d=$('#am-amt'),h=$('#am-hint'),n=$('#am-next');
-  if(!amt){d.classList.add('empty');d.classList.remove('lack');d.textContent='보낼금액';h.textContent='';h.classList.remove('lack');n.classList.remove('on');return;}
+  const d=$('#am-amt'),h=$('#am-hint'),n=$('#am-next'),ko=$('#am-ko');
+  if(!amt){d.classList.add('empty');d.classList.remove('lack');d.textContent='보낼금액';h.textContent='';h.classList.remove('lack');n.classList.remove('on');ko.textContent='';return;}
   d.classList.remove('empty');
   d.innerHTML=(+amt).toLocaleString('ko-KR')+'<span class="cur"></span><span class="wn">원</span>';
+  ko.textContent=koAmount(+amt);
   const lack=(+amt)>accounts[curAcct].bal;
   d.classList.toggle('lack',lack);
   h.innerHTML=lack?'출금계좌 잔고 부족 <u>예약이체</u>':'';
   h.classList.toggle('lack',lack);
   n.classList.toggle('on',!lack);
 }
-$$('.am-key').forEach(b=>b.addEventListener('click',()=>{const k=b.dataset.k;navigator.vibrate&&navigator.vibrate(7);
-  if(k==='back')amt=amt.slice(0,-1);else if(amt.length<9)amt=(amt+k).replace(/^0+(?=\d)/,'');renderAmt();}));
+let lastKey={k:null,t:0};
+$$('.am-key').forEach(b=>b.addEventListener('click',()=>{
+  const k=b.dataset.k,now=performance.now();
+  if(k===lastKey.k&&now-lastKey.t<250){
+    b.classList.remove('shake');void b.offsetWidth;b.classList.add('shake');
+    const d=$('#am-dup');d.classList.add('on');
+    clearTimeout(d._t);d._t=setTimeout(()=>d.classList.remove('on'),1100);
+    lastKey.t=now;
+    return;
+  }
+  lastKey={k,t:now};
+  haptic(10);
+  b.classList.remove('pulse');void b.offsetWidth;b.classList.add('pulse');
+  if(k==='back')amt=amt.slice(0,-1);else if(amt.length<9)amt=(amt+k).replace(/^0+(?=\d)/,'');
+  renderAmt();
+}));
 /* 퀵 금액 칩 */
 $$('.am2-quick button').forEach(b=>b.addEventListener('click',()=>{
   const v=b.dataset.add;
