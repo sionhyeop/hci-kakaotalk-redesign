@@ -777,6 +777,24 @@ svg{display:block}
 .dn-btns2 .ok{border:none;background:#FEE500;color:#3A2929;border-radius:18px;min-height:58px;min-width:160px;
   padding:0 30px;font-size:17px;font-weight:800;cursor:pointer;font-family:inherit}
 .dn-check{animation:okpop .5s cubic-bezier(.2,1.4,.4,1)}
+
+/* ===== SOLUTION: 거래 카드 스택 ===== */
+#s-txstack{background:#F2F4F6}
+.ts-top{display:flex;align-items:center;gap:4px;padding:6px 10px 0}
+.ts-top h1{font-size:19px;font-weight:800}
+.ts-stage{flex:1;display:flex;align-items:center;justify-content:center;padding:0 26px;position:relative}
+.ts-card{width:100%;background:#fff;border-radius:26px;padding:30px 26px;box-shadow:0 12px 34px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;gap:14px;animation:tsin .28s ease}
+@keyframes tsin{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}
+.ts-card .who{font-size:23px;font-weight:800}
+.ts-card .v{font-size:34px;font-weight:800;letter-spacing:-.5px}
+.ts-card .v.plus{color:#4C7DF0}
+.ts-card .meta{display:flex;flex-direction:column;gap:8px;font-size:14.5px;color:#8C9298;margin-top:6px}
+.ts-card .meta b{color:#16C09A;font-weight:800}
+.ts-pos{text-align:center;font-size:14px;font-weight:700;color:#8C9298;padding:6px 0 4px}
+.ts-hint{text-align:center;font-size:12.5px;color:#B0B5BB;padding:0 30px 18px;line-height:1.5}
+.ts-open{display:block;margin:0 18px 12px;width:calc(100% - 36px);min-height:50px;border:none;border-radius:16px;
+  background:rgba(255,255,255,.6);font-size:15px;font-weight:800;color:#2B2E33;cursor:pointer;font-family:inherit}
 </style>
 </head>
 <body>
@@ -1142,6 +1160,7 @@ function scrDetail(){return `<section class="screen" id="s-detail">
       <div class="rule">회비규칙 설정 ${I.chevRight}</div>
     </div>
     <div class="det-filter"><span class="srch">${I.search}</span><span class="opt">1개월 · 전체 · 최신순 ${I.chevDown}</span></div>
+    <button class="ts-open" id="ts-open">카드로 한 건씩 확인 ›</button>
     <div id="tx-list"></div><div style="height:96px"></div>
   </div>
   <button class="det-float" id="det-transfer"><span class="wc">₩</span> 입출금</button>
@@ -1470,6 +1489,15 @@ function scrLock(){return `<section class="screen on" id="s-lock">
   <div class="homebar" style="background:#fff;opacity:.85"></div>
 </section>`;}
 
+function scrTxstack(){return `<section class="screen" id="s-txstack">
+  ${sb('11:36')}
+  <div class="ts-top"><button class="iconbtn" id="ts-back" data-back="detail">${I.back}</button><h1>한 건씩 확인</h1></div>
+  <div class="ts-stage" id="ts-stage"></div>
+  <div class="ts-pos" id="ts-pos"></div>
+  <div class="ts-hint">프레임 좌측 볼륨 버튼 또는 키보드 ↑↓로 넘겨보세요 — 터치 없이 재확인</div>
+  <div class="homebar"></div>
+</section>`;}
+
 function scrAuthsel(){return `<section class="screen" id="s-authsel">
   ${sb('9:41')}
   <div class="as-top"><button class="iconbtn" data-back="lock">${I.back}</button></div>
@@ -1484,10 +1512,10 @@ function scrAuthsel(){return `<section class="screen" id="s-authsel">
 </section>`;}
 
 /* ============ 마운트 ============ */
-$('#screens').innerHTML = scrLock()+scrAuthsel()+scrPattern()+scrHome()+scrProducts()+scrDetail()+scrMyacc()+scrRecipient()+scrAmount()+scrOb()+scrAi()+scrInvest()+scrAllmenu()+scrBenefit()+scrMemo()+scrAuth2()+scrDone2()+scrNotif();
+$('#screens').innerHTML = scrLock()+scrAuthsel()+scrTxstack()+scrPattern()+scrHome()+scrProducts()+scrDetail()+scrMyacc()+scrRecipient()+scrAmount()+scrOb()+scrAi()+scrInvest()+scrAllmenu()+scrBenefit()+scrMemo()+scrAuth2()+scrDone2()+scrNotif();
 
 /* ============ 화면 전환 ============ */
-const screens=['lock','authsel','pattern','home','products','detail','myacc','recipient','amount','ob','ai','invest','allmenu','benefit','memo','auth2','done2','notif'];
+const screens=['lock','authsel','txstack','pattern','home','products','detail','myacc','recipient','amount','ob','ai','invest','allmenu','benefit','memo','auth2','done2','notif'];
 function go(n){screens.forEach(s=>$('#s-'+s)&&$('#s-'+s).classList.remove('on'));$('#s-'+n).classList.add('on');}
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),1900);}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-back]');
@@ -1849,6 +1877,39 @@ function setupHomeMask(){
 }
 setupHomeMask();
 $('#fab-send').addEventListener('click',()=>{curAcct='sang';go('recipient');});
+
+/* ===== SOLUTION: 거래 카드 스택 + 볼륨 버튼 ===== */
+let tsIdx=0,tsList=[];
+function tsRender(){
+  const t=tsList[tsIdx];if(!t)return;
+  $('#ts-stage').innerHTML=`<div class="ts-card">
+    <div class="who">${t.nm}</div>
+    <div class="v ${t.plus?'plus':''}">${t.v}</div>
+    <div class="meta">
+      <span>${t.dt} · 잔액 ${t.bal}</span>
+      <span>상태 <b>완료 ✓</b></span>
+    </div></div>`;
+  $('#ts-pos').textContent=`${tsIdx+1} / ${tsList.length}`;
+}
+function tsOpen(list,backTo){
+  tsList=list;tsIdx=0;
+  $('#ts-back').dataset.back=backTo;
+  tsRender();go('txstack');
+}
+function tsMove(d){
+  if(!$('#s-txstack').classList.contains('on'))return;
+  const n=tsIdx+d;
+  if(n<0||n>=tsList.length){haptic(8);return;}
+  tsIdx=n;haptic(12);tsRender();
+}
+document.addEventListener('click',e=>{if(e.target.closest('#ts-open'))tsOpen(curTx,'detail');});
+$('#vk-up').addEventListener('click',()=>tsMove(-1));
+$('#vk-dn').addEventListener('click',()=>tsMove(1));
+document.addEventListener('keydown',e=>{
+  if(e.target.matches('input'))return;
+  if(e.key==='ArrowUp'){tsMove(-1);e.preventDefault();}
+  if(e.key==='ArrowDown'){tsMove(1);e.preventDefault();}
+});
 
 /* ===== SOLUTION: 슬라이드 투 센드 ===== */
 (function(){
