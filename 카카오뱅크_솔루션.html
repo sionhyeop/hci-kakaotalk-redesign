@@ -2010,6 +2010,25 @@ $('#smb-card').addEventListener('click',()=>{
   clearTimeout(smbT);smbT=setTimeout(()=>{$('#smb-amt').textContent='●●●,●●●원';},5000);
 });
 
+/* ===== SOLUTION: 데모 패널 ===== */
+$('#demo-deposit').addEventListener('click',()=>{
+  const a=accounts.sang;a.bal+=50000;
+  a.tx.unshift({dt:'06.12',nm:'이서연',memo:'#입금',v:'+50,000원',plus:1,bal:a.bal.toLocaleString('ko-KR')+'원'});
+  pendingGift=true;
+  $('#wg-gift').classList.add('on');
+  wgRender(false);
+  const ha=document.querySelector('#s-home .acc2[data-acct="sang"] .amt');
+  if(ha)ha.dataset.full=a.bal.toLocaleString('ko-KR')+'원';
+  if(!$('#s-lock').classList.contains('on'))toast('입금 50,000원 · 이서연 💛');
+  haptic(20);
+});
+$('#demo-dup').addEventListener('click',()=>{
+  if(!$('#s-amount').classList.contains('on')){toast('금액 입력 화면에서 눌러주세요');return;}
+  const key=document.querySelector('#am-keypad .am-key[data-k="5"]');
+  key.click();
+  setTimeout(()=>key.click(),120);
+});
+
 </script>
 </body>
 </html>
