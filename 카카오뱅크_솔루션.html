@@ -636,6 +636,34 @@ svg{display:block}
 .nt-item .ar{position:absolute;right:18px;top:50%;transform:translateY(-50%);color:#C9CDD2}
 .nt-item .ar svg{width:18px;height:18px}
 
+/* ===== 잠금화면 위젯 ===== */
+#s-lock{background:linear-gradient(160deg,#2E3440 0%,#1B2129 55%,#11151B 100%);color:#fff;align-items:center}
+.lk-time{margin-top:54px;font-size:76px;font-weight:300;letter-spacing:1px;text-align:center}
+.lk-date{font-size:17px;color:#AEB6C2;text-align:center;margin-top:2px}
+.widget{margin:34px 20px 0;width:calc(100% - 40px);background:rgba(255,255,255,.10);backdrop-filter:blur(18px);
+  border:1px solid rgba(255,255,255,.14);border-radius:24px;padding:18px;cursor:pointer}
+.wg-head{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;color:#E8EBF0}
+.wg-logo{width:24px;height:24px;border-radius:7px;background:#FEE500;color:#3A2929;display:flex;
+  align-items:center;justify-content:center;font-weight:900;font-size:13px}
+.wg-gift{margin-left:auto;font-size:20px;display:none}
+.wg-gift.on{display:block;animation:wiggle .7s ease infinite}
+@keyframes wiggle{0%,100%{transform:rotate(0)}25%{transform:rotate(-14deg) scale(1.15)}60%{transform:rotate(12deg) scale(1.15)}}
+.wg-maskarea{position:relative;margin-top:14px;border-radius:14px;padding:6px 4px}
+.wg-bal{font-size:30px;font-weight:800;letter-spacing:.5px}
+.wg-tx{margin-top:7px;font-size:14px;color:#B9C1CC}
+.wg-ring{position:absolute;right:2px;top:2px;width:26px;height:26px;transform:rotate(-90deg);opacity:0;transition:opacity .2s}
+.wg-ring circle{fill:none;stroke:#FEE500;stroke-width:3.4;stroke-linecap:round;stroke-dasharray:100.5;stroke-dashoffset:0}
+.wg-ring.run{opacity:1}
+.wg-ring.run circle{animation:ringout 5s linear forwards}
+@keyframes ringout{from{stroke-dashoffset:0}to{stroke-dashoffset:100.5}}
+.wg-foot{display:flex;align-items:center;margin-top:14px;gap:10px}
+.wg-copy{border:none;border-radius:12px;padding:11px 16px;font-size:13.5px;font-weight:700;cursor:pointer;
+  background:rgba(255,255,255,.14);color:#fff;font-family:inherit;visibility:hidden}
+.wg-copy.show{visibility:visible}
+.wg-open{margin-left:auto;border:none;border-radius:12px;padding:11px 18px;font-size:14px;font-weight:800;
+  cursor:pointer;background:#FEE500;color:#3A2929;font-family:inherit;min-height:44px}
+.lk-hint{margin-top:18px;font-size:12.5px;color:#6E7682;text-align:center}
+
 /* ===== SOLUTION ===== */
 .phone-wrap{position:relative}
 .volkeys{position:absolute;left:-8px;top:200px;display:flex;flex-direction:column;gap:10px;z-index:5}
@@ -943,7 +971,7 @@ function acc2Card(key,extra=''){
     ${a.btns.length?`<div class="btns">${a.btns.map(b=>`<span class="${b==='이체'?'t-send':''}">${b}</span>`).join('')}</div>`:''}
     ${extra}</div>`;
 }
-function scrHome(){return `<section class="screen on" id="s-home">
+function scrHome(){return `<section class="screen" id="s-home">
   ${sb('11:35')}
   <div class="h2-top"><h1>김진우</h1><span class="bell" data-go="notif" style="cursor:pointer">${I.bell}</span></div>
   <div class="body">
@@ -1310,11 +1338,32 @@ function scrPattern(){return `<section class="screen" id="s-pattern">
     <div class="pt-forgot">혹시 패턴을 잊으셨나요?</div>
   </div><div class="homebar"></div></section>`;}
 
+function scrLock(){return `<section class="screen on" id="s-lock">
+  ${sb('9:41')}
+  <div class="lk-time">9:41</div>
+  <div class="lk-date">6월 12일 금요일</div>
+  <div class="widget" id="widget">
+    <div class="wg-head"><span class="wg-logo">B</span>카카오뱅크
+      <span class="wg-gift" id="wg-gift">🎁</span></div>
+    <div class="wg-maskarea" id="wg-maskarea">
+      <div class="wg-bal" id="wg-bal">●●●,●●●원</div>
+      <div class="wg-tx" id="wg-tx"></div>
+      <svg class="wg-ring" id="wg-ring" viewBox="0 0 36 36"><circle cx="18" cy="18" r="16"/></svg>
+    </div>
+    <div class="wg-foot">
+      <button class="wg-copy" id="wg-copy">계좌 복사</button>
+      <button class="wg-open" id="wg-open">앱 열기 ›</button>
+    </div>
+  </div>
+  <div class="lk-hint">잔액 영역 탭 → 5초 보기 · 앱 열기 → 인증</div>
+  <div class="homebar" style="background:#fff;opacity:.85"></div>
+</section>`;}
+
 /* ============ 마운트 ============ */
-$('#screens').innerHTML = scrPattern()+scrHome()+scrProducts()+scrDetail()+scrMyacc()+scrRecipient()+scrAmount()+scrOb()+scrAi()+scrInvest()+scrAllmenu()+scrBenefit()+scrMemo()+scrAuth2()+scrDone2()+scrNotif();
+$('#screens').innerHTML = scrLock()+scrPattern()+scrHome()+scrProducts()+scrDetail()+scrMyacc()+scrRecipient()+scrAmount()+scrOb()+scrAi()+scrInvest()+scrAllmenu()+scrBenefit()+scrMemo()+scrAuth2()+scrDone2()+scrNotif();
 
 /* ============ 화면 전환 ============ */
-const screens=['pattern','home','products','detail','myacc','recipient','amount','ob','ai','invest','allmenu','benefit','memo','auth2','done2','notif'];
+const screens=['lock','pattern','home','products','detail','myacc','recipient','amount','ob','ai','invest','allmenu','benefit','memo','auth2','done2','notif'];
 function go(n){screens.forEach(s=>$('#s-'+s)&&$('#s-'+s).classList.remove('on'));$('#s-'+n).classList.add('on');}
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),1900);}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-back]');
@@ -1326,8 +1375,8 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-back]');
       if(cur&&cur.id===armedOn)go(b.dataset.back);},300);return;}
   const g=e.target.closest('[data-go]');if(g){if(g.dataset.go==='recipient'&&!g.closest('[data-acct]'))curAcct='sang';go(g.dataset.go);}});
 
-/* 첫 화면 = 패턴 */
-go('pattern');
+/* 첫 화면 = 잠금화면 */
+go('lock');
 
 /* ============ 패턴 잠금 ============ */
 (function(){
@@ -1586,6 +1635,36 @@ document.addEventListener('pointerdown',e=>{
   t.classList.remove('tfx');void t.offsetWidth;t.classList.add('tfx');
   haptic(10);
 });
+
+/* ===== SOLUTION: 잠금화면 위젯 ===== */
+let wgTimer=null,pendingGift=false;
+function wgRecent(){const t=accounts.sang.tx[0];return {nm:t.nm,when:t.dt.replace('06.12','오늘').replace('06.10','오늘')};}
+function wgRender(unmasked){
+  const r=wgRecent();
+  if(unmasked){
+    $('#wg-bal').textContent=accounts.sang.bal.toLocaleString('ko-KR')+'원';
+    $('#wg-tx').textContent=`최근 거래 ${r.nm} · ${r.when}`;
+  }else{
+    $('#wg-bal').textContent='●●●,●●●원';
+    $('#wg-tx').textContent=`최근 거래 ${maskName(r.nm)} · ${r.when}`;
+  }
+  $('#wg-copy').classList.toggle('show',!!unmasked);
+}
+function wgUnmask(){
+  wgRender(true);
+  const ring=$('#wg-ring');ring.classList.remove('run');void ring.offsetWidth;ring.classList.add('run');
+  clearTimeout(wgTimer);
+  wgTimer=setTimeout(()=>{wgRender(false);ring.classList.remove('run');},5000);
+}
+$('#wg-maskarea').addEventListener('click',e=>{e.stopPropagation();wgUnmask();});
+$('#wg-copy').addEventListener('click',e=>{e.stopPropagation();
+  const acc='카카오뱅크 '+accounts.sang.no;
+  (navigator.clipboard?navigator.clipboard.writeText(acc):Promise.reject()).catch(()=>{});
+  toast('계좌번호가 복사됐어요');haptic(15);
+});
+$('#widget').addEventListener('click',()=>{go('authsel');});
+$('#wg-open').addEventListener('click',e=>{e.stopPropagation();go('authsel');});
+wgRender(false);
 
 </script>
 </body>
