@@ -1838,7 +1838,7 @@ $('#fab-send').addEventListener('click',()=>{curAcct='sang';go('recipient');});
   let drag=false,sx=0,px=0,max=1;
   function resetSlide(){knob.style.transform='';fill.style.width='';sl.classList.remove('hot','drag');px=0;}
   knob.addEventListener('pointerdown',e=>{
-    drag=true;sx=e.clientX;max=sl.clientWidth-62;sl.classList.add('drag');
+    drag=true;sx=e.clientX;max=Math.max(1,sl.clientWidth-62);sl.classList.add('drag');
     knob.setPointerCapture(e.pointerId);
   });
   knob.addEventListener('pointermove',e=>{
