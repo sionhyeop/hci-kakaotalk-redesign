@@ -697,6 +697,25 @@ svg{display:block}
 .smode.on .sw{background:#16C09A}
 .smode.on .sw::after{left:19px}
 .h2-top .bell{margin-left:12px}
+#s-simple{background:#fff}
+.sm-top{display:flex;align-items:center;padding:14px 22px 0}
+.sm-top h1{font-size:25px;font-weight:800}
+.sm-top .smode{margin-left:auto}
+.sm-btns{flex:1;display:flex;flex-direction:column;gap:18px;padding:26px 20px 90px}
+.sm-btn{flex:1;border:1.5px solid #ECEDEF;border-radius:26px;background:#FAFBFC;font-family:inherit;cursor:pointer;
+  font-size:24px;font-weight:800;color:#2B2E33;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:10px;transition:.15s;animation:smin .3s ease backwards}
+.sm-btn:nth-child(2){animation-delay:.06s}.sm-btn:nth-child(3){animation-delay:.12s}
+@keyframes smin{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+.sm-btn:active{transform:scale(.97);background:#FFFBE0;border-color:#FEE500}
+.sm-btn .big{font-size:34px}
+#s-smbal{background:#F2F4F6}
+.smb-wrap{flex:1;display:flex;align-items:center;padding:0 22px}
+.smb-card{width:100%;background:#fff;border-radius:26px;padding:38px 28px;box-shadow:0 12px 34px rgba(0,0,0,.10);cursor:pointer;text-align:center}
+.smb-card .nm{font-size:16px;font-weight:700;color:#8C9298}
+.smb-card .amt{font-size:40px;font-weight:800;margin-top:14px;letter-spacing:-.5px}
+.smb-card .hint{font-size:13px;color:#B0B5BB;margin-top:16px}
+body.smode-on .rc-list-rest{display:none}
 .fab-send{position:absolute;right:16px;bottom:84px;z-index:25;min-height:58px;border:none;border-radius:20px;
   background:#FEE500;color:#3A2929;font-size:17px;font-weight:800;font-family:inherit;cursor:pointer;
   padding:0 24px;display:flex;align-items:center;gap:8px;box-shadow:0 8px 22px rgba(0,0,0,.18);transition:transform .12s}
@@ -1194,6 +1213,7 @@ function scrRecipient(){return `<section class="screen" id="s-recipient">
       <button class="rc-big rc-row" data-name="최준호" data-bank="국민은행"><span class="ini" style="background:#5F6A45">최</span><b>최준호</b><span class="bk">국민은행</span></button>
       <button class="rc-big rc-row" data-name="정다은" data-bank="신한은행"><span class="ini" style="background:#2B65D9">정</span><b>정다은</b><span class="bk">신한은행</span></button>
     </div>
+    <div class="rc-list-rest">
     <div class="rc-sec2" style="margin-top:6px">전체</div>
     ${recipients.map(r=>{
     if(r.sec==='mine')return `<div class="rc-sec">내 계좌 <span class="cnt">9개 ${I.chevDown}</span></div>`;
@@ -1202,7 +1222,8 @@ function scrRecipient(){return `<section class="screen" id="s-recipient">
       <span class="ava" style="background:${r.c}">${r.g}</span>
       <div class="info"><b>${r.nm}</b><span>${r.bank}</span></div>
       ${r.star?`<span class="star">${I.star}</span>`:''}</div>`;}).join('')}
-    <div style="height:90px"></div></div>
+    <div style="height:90px"></div>
+    </div></div>
   <div class="rc-bottom">${I.plus} 계좌번호 직접입력</div><div class="homebar"></div></section>`;}
 
 function scrAmount(){return `<section class="screen" id="s-amount">
@@ -1498,6 +1519,27 @@ function scrTxstack(){return `<section class="screen" id="s-txstack">
   <div class="homebar"></div>
 </section>`;}
 
+function scrSimple(){return `<section class="screen" id="s-simple">
+  ${sb('11:35')}
+  <div class="sm-top"><h1>간단 모드</h1>
+    <label class="smode on" id="smode-sw2"><span>간단 모드</span><i class="sw"></i></label></div>
+  <div class="sm-btns">
+    <button class="sm-btn" id="sm-send"><span class="big">₩</span>보내기</button>
+    <button class="sm-btn" id="sm-bal"><span class="big">👁</span>잔액</button>
+    <button class="sm-btn" id="sm-tx"><span class="big">✓</span>거래내역</button>
+  </div>
+  <div class="homebar"></div></section>`;}
+function scrSmbal(){return `<section class="screen" id="s-smbal">
+  ${sb('11:35')}
+  <div class="ts-top"><button class="iconbtn" data-back="simple">${I.back}</button><h1>잔액</h1></div>
+  <div class="smb-wrap">
+    <div class="smb-card" id="smb-card">
+      <div class="nm">김진우의 통장</div>
+      <div class="amt" id="smb-amt">●●●,●●●원</div>
+      <div class="hint">탭하면 5초간 보여요</div>
+    </div>
+  </div>
+  <div class="homebar"></div></section>`;}
 function scrAuthsel(){return `<section class="screen" id="s-authsel">
   ${sb('9:41')}
   <div class="as-top"><button class="iconbtn" data-back="lock">${I.back}</button></div>
@@ -1512,11 +1554,16 @@ function scrAuthsel(){return `<section class="screen" id="s-authsel">
 </section>`;}
 
 /* ============ 마운트 ============ */
-$('#screens').innerHTML = scrLock()+scrAuthsel()+scrTxstack()+scrPattern()+scrHome()+scrProducts()+scrDetail()+scrMyacc()+scrRecipient()+scrAmount()+scrOb()+scrAi()+scrInvest()+scrAllmenu()+scrBenefit()+scrMemo()+scrAuth2()+scrDone2()+scrNotif();
+$('#screens').innerHTML = scrLock()+scrAuthsel()+scrTxstack()+scrSimple()+scrSmbal()+scrPattern()+scrHome()+scrProducts()+scrDetail()+scrMyacc()+scrRecipient()+scrAmount()+scrOb()+scrAi()+scrInvest()+scrAllmenu()+scrBenefit()+scrMemo()+scrAuth2()+scrDone2()+scrNotif();
 
 /* ============ 화면 전환 ============ */
-const screens=['lock','authsel','txstack','pattern','home','products','detail','myacc','recipient','amount','ob','ai','invest','allmenu','benefit','memo','auth2','done2','notif'];
-function go(n){screens.forEach(s=>$('#s-'+s)&&$('#s-'+s).classList.remove('on'));$('#s-'+n).classList.add('on');}
+let smode=false;
+const screens=['lock','authsel','txstack','simple','smbal','pattern','home','products','detail','myacc','recipient','amount','ob','ai','invest','allmenu','benefit','memo','auth2','done2','notif'];
+function go(n){
+  if(smode&&n==='home')n='simple';
+  screens.forEach(s=>$('#s-'+s)&&$('#s-'+s).classList.remove('on'));
+  $('#s-'+n).classList.add('on');
+}
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),1900);}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-back]');
   if(b){if(b.classList.contains('back-armed'))return;
@@ -1648,6 +1695,7 @@ document.addEventListener('click',e=>{
 /* 다음: 금액 → 표기 화면 */
 $('#am-next').addEventListener('click',()=>{
   if(!$('#am-next').classList.contains('on'))return;
+  if(smode){openConfirm();return;}
   $('#mm-amt').innerHTML=(+amt).toLocaleString('ko-KR')+'<span class="wn">원</span>';
   $('#mm-to').value=payee.name;$('#mm-me').value='';
   syncAccBoxes();
@@ -1943,6 +1991,23 @@ document.addEventListener('keydown',e=>{
     if(drag){drag=false;sl.classList.remove('drag');resetSlide();}
   });
 })();
+
+/* ===== SOLUTION: 간단 모드 ===== */
+function setSmode(v){
+  smode=v;document.body.classList.toggle('smode-on',v);
+  $('#smode-sw').classList.toggle('on',v);
+  go(v?'simple':'home');
+}
+$('#smode-sw').addEventListener('click',()=>setSmode(true));
+$('#smode-sw2').addEventListener('click',()=>setSmode(false));
+$('#sm-send').addEventListener('click',()=>{curAcct='sang';go('recipient');});
+$('#sm-bal').addEventListener('click',()=>{$('#smb-amt').textContent='●●●,●●●원';go('smbal');});
+$('#sm-tx').addEventListener('click',()=>tsOpen(accounts.sang.tx,'simple'));
+let smbT=null;
+$('#smb-card').addEventListener('click',()=>{
+  $('#smb-amt').textContent=accounts.sang.bal.toLocaleString('ko-KR')+'원';
+  clearTimeout(smbT);smbT=setTimeout(()=>{$('#smb-amt').textContent='●●●,●●●원';},5000);
+});
 
 </script>
 </body>
