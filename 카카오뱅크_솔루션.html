@@ -635,15 +635,50 @@ svg{display:block}
 .nt-item .more svg{width:13px;height:13px}
 .nt-item .ar{position:absolute;right:18px;top:50%;transform:translateY(-50%);color:#C9CDD2}
 .nt-item .ar svg{width:18px;height:18px}
+
+/* ===== SOLUTION ===== */
+.phone-wrap{position:relative}
+.volkeys{position:absolute;left:-8px;top:200px;display:flex;flex-direction:column;gap:10px;z-index:5}
+.vk{width:8px;height:52px;border:none;border-radius:5px 0 0 5px;background:#1A1D22;cursor:pointer;transition:background .15s}
+.vk:hover{background:#3A4048}.vk:active{background:#FEE500}
+.demo-panel{position:fixed;right:26px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:10px;width:200px}
+.demo-panel b{color:#C9CED6;font-size:14px;margin-bottom:2px}
+.demo-panel button{border:1px solid #3A4048;background:#171B21;color:#D7DBE2;border-radius:12px;
+  padding:13px 14px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;text-align:left;transition:.15s}
+.demo-panel button:hover{border-color:#FEE500;color:#FEE500}
+.demo-panel .dp-note{color:#596069;font-size:12px;line-height:1.5}
+.frame.hpulse{animation:hpulse .4s ease}
+@keyframes hpulse{0%,100%{outline:0 solid rgba(254,229,0,0)}35%{outline:7px solid rgba(254,229,0,.6)}}
+.tfx{animation:tring .35s ease}
+@keyframes tring{0%{box-shadow:0 0 0 0 rgba(254,229,0,0)}30%{box-shadow:0 0 0 4px rgba(254,229,0,.4)}100%{box-shadow:0 0 0 10px rgba(254,229,0,0)}}
+[data-back].back-armed{background:rgba(0,0,0,.08);border-radius:12px;transition:background .1s}
+.burstfx{position:absolute;inset:0;border-radius:0;background:radial-gradient(circle at 50% 72%,rgba(254,229,0,.55),rgba(254,229,0,0) 60%);
+  opacity:0;pointer-events:none;z-index:58}
+.burstfx.go{animation:burst .55s ease}
+@keyframes burst{0%{opacity:0;transform:scale(.6)}30%{opacity:1}100%{opacity:0;transform:scale(1.6)}}
 </style>
 </head>
 <body>
 <div class="stage"><b>김진우를 위한 카카오뱅크</b>손 다한증 사용자를 위한 리디자인 · 잠금화면 위젯부터 시작</div>
 
-<div class="frame" id="frame">
-  <!-- 화면들은 JS에서 채워집니다 -->
-  <div id="screens"></div>
-  <div class="toast" id="toast"></div>
+<div class="phone-wrap">
+  <div class="volkeys">
+    <button class="vk" id="vk-up" title="볼륨 ↑"></button>
+    <button class="vk" id="vk-dn" title="볼륨 ↓"></button>
+  </div>
+  <div class="frame" id="frame">
+    <!-- 화면들은 JS에서 채워집니다 -->
+    <div id="screens"></div>
+    <div class="toast" id="toast"></div>
+    <div class="burstfx" id="burstfx"></div>
+  </div>
+</div>
+
+<div class="demo-panel">
+  <b>시연 컨트롤</b>
+  <button id="demo-deposit">입금 발생시키기</button>
+  <button id="demo-dup">중복 입력 시뮬레이션</button>
+  <span class="dp-note">햅틱 발생 시 프레임 테두리가 노랗게 펄스됩니다</span>
 </div>
 
 <script>
@@ -1281,7 +1316,10 @@ $('#screens').innerHTML = scrPattern()+scrHome()+scrProducts()+scrDetail()+scrMy
 const screens=['pattern','home','products','detail','myacc','recipient','amount','ob','ai','invest','allmenu','benefit','memo','auth2','done2','notif'];
 function go(n){screens.forEach(s=>$('#s-'+s)&&$('#s-'+s).classList.remove('on'));$('#s-'+n).classList.add('on');}
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),1900);}
-document.addEventListener('click',e=>{const b=e.target.closest('[data-back]');if(b){go(b.dataset.back);return;}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-back]');
+  if(b){if(b.classList.contains('back-armed'))return;
+    b.classList.add('back-armed');
+    setTimeout(()=>{b.classList.remove('back-armed');go(b.dataset.back);},300);return;}
   const g=e.target.closest('[data-go]');if(g){if(g.dataset.go==='recipient'&&!g.closest('[data-acct]'))curAcct='sang';go(g.dataset.go);}});
 
 /* 첫 화면 = 패턴 */
@@ -1517,6 +1555,33 @@ $('#ai-send').addEventListener('click',()=>aiSend($('#ai-input').value));
 $('#ai-input').addEventListener('keydown',e=>{if(e.key==='Enter')aiSend(e.target.value);});
 /* ============ 오픈뱅킹 ============ */
 $('#ob-agree').addEventListener('click',()=>{toast('이체가 완료됐어요 ✓');setTimeout(()=>go('home'),800);});
+
+/* ===== SOLUTION: 공통 인프라 ===== */
+function haptic(ms=10){
+  navigator.vibrate&&navigator.vibrate(ms);
+  const f=$('#frame');f.classList.remove('hpulse');void f.offsetWidth;f.classList.add('hpulse');
+}
+function koAmount(n){
+  n=+n;if(!n)return'';
+  const dig=['','일','이','삼','사','오','육','칠','팔','구'];
+  const small=v=>{let s='';const th=v/1000|0,h=v%1000/100|0,te=v%100/10|0,o=v%10;
+    if(th)s+=(th>1?dig[th]:'')+'천';if(h)s+=(h>1?dig[h]:'')+'백';
+    if(te)s+=(te>1?dig[te]:'')+'십';if(o)s+=dig[o];return s;};
+  let out='',rest=n;
+  for(const[u,val]of[['조',1e12],['억',1e8],['만',1e4]]){
+    const q=rest/val|0;if(q){out+=small(q)+u;rest%=val;}
+  }
+  if(rest)out+=small(rest);
+  return out+' 원';
+}
+function maskName(n){return n.length<2?n:n[0]+'●'+n.slice(2);}
+/* 3중 탭 피드백: 시각 링 + 햅틱 (마이크로 모션은 기존 :active 스케일) */
+document.addEventListener('pointerdown',e=>{
+  const t=e.target.closest('button,[data-go],[data-back],.am-key,.rc-row,.acct,.acc2,.widget,.sm-btn');
+  if(!t||t.closest('.demo-panel'))return;
+  t.classList.remove('tfx');void t.offsetWidth;t.classList.add('tfx');
+  haptic(10);
+});
 
 </script>
 </body>
