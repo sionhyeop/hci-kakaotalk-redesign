@@ -814,6 +814,18 @@ body.smode-on .rc-list-rest{display:none}
 .ts-hint{text-align:center;font-size:12.5px;color:#B0B5BB;padding:0 30px 18px;line-height:1.5}
 .ts-open{display:block;margin:0 18px 12px;width:calc(100% - 36px);min-height:50px;border:none;border-radius:16px;
   background:rgba(255,255,255,.6);font-size:15px;font-weight:800;color:#2B2E33;cursor:pointer;font-family:inherit}
+/* 금액 화면: 표시영역은 남는 공간 흡수·축소, 하단 키패드+다음은 바닥 고정 → 짧은 모바일 뷰포트에서도 '다음' 버튼 항상 노출 */
+.am-mid{flex:1;min-height:0;overflow-y:auto;scrollbar-width:none}
+.am-mid::-webkit-scrollbar{display:none}
+.am-bottom{flex-shrink:0;display:flex;flex-direction:column}
+@media (max-height:760px){
+  #s-amount .am-amount{margin-top:12px;min-height:46px}
+  #am-keypad .am-key{height:56px}
+  #am-keypad{gap:6px}
+  .am2-quick{padding-top:6px;padding-bottom:6px}
+  .am2-acc{padding-top:10px;padding-bottom:10px}
+  .am2-next{margin-top:8px;margin-bottom:10px}
+}
 </style>
 </head>
 <body>
@@ -1231,18 +1243,21 @@ function scrAmount(){return `<section class="screen" id="s-amount">
   <div class="am-top"><button class="iconbtn" data-back="recipient">${I.back}</button>
     <h1 id="am-name"><span class="nmtxt">김진우</span> ${I.chevDown}</h1><span class="cancel" data-back="home">취소</span></div>
   <div class="am-sub" id="am-sub">카카오뱅크 3333-31-7235789</div>
-  <div class="am-amount empty" id="am-amt">보낼금액</div>
-  <div class="am-hint" id="am-hint"></div>
-  <div class="am-ko" id="am-ko"></div>
-  <div class="am-dup" id="am-dup">한 번만 입력됐어요</div>
-  <div style="margin-top:auto"></div>
-  <div class="am2-acc" id="am2-acc"><span class="txt" id="am2-acc-txt">김진우의 통장 (6845) : 117,840원</span>${I.chevDown}</div>
-  <div class="am2-quick">
-    <button data-add="10000">+1만</button><button data-add="50000">+5만</button>
-    <button data-add="100000">+10만</button><button data-add="all">전액</button>
+  <div class="am-mid">
+    <div class="am-amount empty" id="am-amt">보낼금액</div>
+    <div class="am-hint" id="am-hint"></div>
+    <div class="am-ko" id="am-ko"></div>
+    <div class="am-dup" id="am-dup">한 번만 입력됐어요</div>
   </div>
-  <div class="am-keypad" id="am-keypad"></div>
-  <button class="am2-next" id="am-next">다음</button>
+  <div class="am-bottom">
+    <div class="am2-acc" id="am2-acc"><span class="txt" id="am2-acc-txt">김진우의 통장 (6845) : 117,840원</span>${I.chevDown}</div>
+    <div class="am2-quick">
+      <button data-add="10000">+1만</button><button data-add="50000">+5만</button>
+      <button data-add="100000">+10만</button><button data-add="all">전액</button>
+    </div>
+    <div class="am-keypad" id="am-keypad"></div>
+    <button class="am2-next" id="am-next">다음</button>
+  </div>
   <div class="sheet-dim" id="acc-dim"></div>
   <div class="sheet accsheet" id="acc-sheet" style="text-align:left">
     <div style="font-size:18px;font-weight:800;margin-bottom:14px">출금계좌 선택</div>
